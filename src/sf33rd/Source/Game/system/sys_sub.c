@@ -64,6 +64,14 @@ void Setup_Candidate_Buff(s16 PL_id);
 s16 Check_EM_Buff(s16 ix, s16 ok_urien);
 s32 Check_EM_Sub(s16 ix, s16 ok_urien, s16 Rnd);
 
+/// Default action of each button: West, North, R1, L1, South, East, R2, L2
+#if CRS_APP_DRIVER_VITA
+// The Vita has no L2 / R2, so heavy kick is on L instead of three punches
+#define DEFAULT_SHOT 0, 1, 2, 5, 3, 4, 5, 10
+#else
+#define DEFAULT_SHOT 0, 1, 2, 9, 3, 4, 5, 10
+#endif
+
 const u16 Convert_Data[12] = { 0x10, 0x20, 0x40, 0x100, 0x200, 0x400, 0x110, 0x220, 0x440, 0x70, 0x700, 0 };
 
 void Switch_Screen_Init(s32 /* unused */) {
@@ -562,7 +570,7 @@ void Game_Data_Init() {
 }
 
 void Setup_IO_ConvDataDefault(s32 id) {
-    const u8 ioConvInitData[12] = { 0, 1, 2, 9, 3, 4, 5, 10, 0, 0, 0, 0 };
+    const u8 ioConvInitData[12] = { DEFAULT_SHOT, 0, 0, 0, 0 };
     s32 ix;
 
     for (ix = 0; ix < 12; ix++) {
@@ -680,12 +688,12 @@ void Copy_Check_w() {
 const struct _SAVE_W Game_Default_Data = {
     .Pad_Infor = {
         [0] = {
-            .Shot = { 0, 1, 2, 9, 3, 4, 5, 10 },
+            .Shot = { DEFAULT_SHOT },
             .Vibration = 0,
             .free = { 0, 0, 0 }
         },
         [1] = {
-            .Shot = { 0, 1, 2, 9, 3, 4, 5, 10 },
+            .Shot = { DEFAULT_SHOT },
             .Vibration = 0,
             .free = { 0, 0, 0 }
         },

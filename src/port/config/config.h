@@ -11,6 +11,11 @@
 #define CFG_DRAW_PLAYERS_ABOVE_HUD "draw-players-above-hud"
 #define CFG_ARCADE_BALANCE "arcade-balance"
 
+#if CRS_APP_DRIVER_VITA
+#define CFG_KEY_VITA_ASPECT "vita-aspect"
+#define CFG_KEY_VITA_FILTER "vita-filter"
+#endif
+
 /// Initialize config system
 void Config_Init();
 

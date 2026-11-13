@@ -4,10 +4,12 @@
 #include "platform/app/sdl/sdl_app.h"
 #elif CRS_APP_DRIVER_PSP
 #include "platform/app/psp/psp_app.h"
+#elif CRS_APP_DRIVER_VITA
+#include "platform/app/vita/vita_app.h"
 #endif
 
 bool App_SupportsExit() {
-#if CRS_APP_DRIVER_SDL || CRS_APP_DRIVER_PSP
+#if CRS_APP_DRIVER_SDL || CRS_APP_DRIVER_PSP || CRS_APP_DRIVER_VITA
     return true;
 #else
     return false;
@@ -19,5 +21,7 @@ void App_Exit() {
     SDLApp_Exit();
 #elif CRS_APP_DRIVER_PSP
     PSPApp_Exit();
+#elif CRS_APP_DRIVER_VITA
+    VitaApp_Exit();
 #endif
 }

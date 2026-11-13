@@ -271,6 +271,11 @@ Input_PadType SDLPad_GetPadType(int id) {
         return INPUT_PAD_TYPE_KEYBOARD;
 
     case SDLPAD_INPUT_GAMEPAD:
+#if CRS_APP_DRIVER_VITA
+        // SDL doesn't know that the Vita's own buttons carry PlayStation symbols
+        return INPUT_PAD_TYPE_PLAYSTATION;
+#endif
+
         const SDL_GamepadButtonLabel label =
             SDL_GetGamepadButtonLabel(input_source->gamepad.gamepad, SDL_GAMEPAD_BUTTON_SOUTH);
 

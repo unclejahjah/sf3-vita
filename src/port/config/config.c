@@ -35,6 +35,10 @@ static const ConfigEntry default_entries[] = {
     { .key = CFG_KEY_SCANLINES, .type = CFG_INT, .value.i = 0 },
     { .key = CFG_DRAW_PLAYERS_ABOVE_HUD, .type = CFG_BOOL, .value.b = false },
     { .key = CFG_ARCADE_BALANCE, .type = CFG_BOOL, .value.b = false },
+#if CRS_APP_DRIVER_VITA
+    { .key = CFG_KEY_VITA_ASPECT, .type = CFG_STRING, .value.s = "4:3" },
+    { .key = CFG_KEY_VITA_FILTER, .type = CFG_STRING, .value.s = "sharp" },
+#endif
 };
 
 static ConfigEntry entries[CONFIG_ENTRIES_MAX] = { 0 };

@@ -1,5 +1,6 @@
 #include "sf33rd/Source/Game/ui/glyph_renderer.h"
 #include "core/renderer.h"
+#include "port/paths.h"
 #include "sf33rd/AcrSDK/ps2/flps2etc.h"
 #include "sf33rd/AcrSDK/ps2/foundaps2.h"
 
@@ -38,7 +39,7 @@ static GlyphPosition alpha_to_position(char c) {
 }
 
 bool GlyphRenderer_Init() {
-    const char* base_path = SDL_GetBasePath();
+    const char* base_path = Paths_GetBasePath();
     char* full_path = NULL;
     SDL_asprintf(&full_path, "%s/assets/glyphs.bmp", base_path);
     glyph_texture = flCreateTextureFromFile(full_path, 0);

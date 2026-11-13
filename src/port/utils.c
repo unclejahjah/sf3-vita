@@ -30,6 +30,14 @@ void fatal_error(const char* fmt, ...) {
 
     va_end(args);
 
+#if CRS_APP_DRIVER_VITA
+    // stderr goes nowhere on a Vita. Leave a trace in the log file
+    va_list log_args;
+    va_start(log_args, fmt);
+    SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_CRITICAL, fmt, log_args);
+    va_end(log_args);
+#endif
+
 #if __APPLE__ || linux
     void* buffer[BACKTRACE_MAX];
 

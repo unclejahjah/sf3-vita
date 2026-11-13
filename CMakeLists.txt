@@ -18,7 +18,7 @@ endif()
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-if(NOT PSP)
+if(NOT PSP AND NOT VITA)
     option(THREESX_STATCHECK "Build with replay statcheck support" OFF)
     option(THREESX_ARCADE_ROM_TEXTURES "Build experimental character textures from CPS3 ROM at runtime" OFF)
 endif()
@@ -45,7 +45,7 @@ add_executable(3sx MACOSX_BUNDLE
     ${GAME_SRC}
 )
 
-if(NOT PSP)
+if(NOT PSP AND NOT VITA)
     target_sources(3sx PRIVATE
         $<$<CONFIG:Debug>:${IMGUI_SOURCES}>
     )
@@ -64,6 +64,18 @@ if(PSP)
         CRS_APP_DRIVER_PSP
         CRS_VIDEO_DRIVER_PSP
         CRS_INPUT_DRIVER_SDL
+    )
+elseif(VITA)
+    target_compile_definitions(3sx PRIVATE
+        $<$<CONFIG:Debug>:DEBUG>
+
+        $<$<CONFIG:Release>:RELEASE>
+
+        CRS_APP_DRIVER_VITA
+        CRS_VIDEO_DRIVER_VITA
+        CRS_INPUT_DRIVER_SDL
+
+        SOUND_ENABLED
     )
 else()
     target_compile_definitions(3sx PRIVATE
@@ -130,7 +142,7 @@ target_compile_options(3sx PRIVATE
     $<$<OR:$<CONFIG:Debug>,$<BOOL:${THREESX_STATCHECK}>>:-Wno-unused-but-set-variable>
 )
 
-if(NOT PSP AND (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU"))
+if(NOT PSP AND NOT VITA AND (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU"))
     target_compile_options(3sx PRIVATE
         $<$<CONFIG:Debug>:-fsanitize=address>
         $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
@@ -171,23 +183,34 @@ endif()
 set(THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/third_party")
 
 find_package(ZLIB REQUIRED)
-find_package(OpenGL REQUIRED)
 
-set(SDL3_ROOT          "${THIRD_PARTY_DIR}/sdl3/build")
-set(LIBCDIO_ROOT       "${THIRD_PARTY_DIR}/libcdio/build")
-set(GEKKONET_ROOT      "${THIRD_PARTY_DIR}/GekkoNet/build")
-set(SDL3_NET_ROOT      "${THIRD_PARTY_DIR}/SDL_net/build")
-set(MINIZIP_NG_ROOT    "${THIRD_PARTY_DIR}/minizip-ng/build")
-set(TF_PSA_CRYPTO_ROOT "${THIRD_PARTY_DIR}/tf-psa-crypto/build")
+if(VITA)
+    # SDL3 and vita2d come with VitaSDK. Only minizip-ng is built from source (tools/vita/build-minizip.sh).
+    # It lives in its own folder so that a desktop build can share the checkout
+    set(MINIZIP_NG_ROOT "${THIRD_PARTY_DIR}/vita/minizip-ng/build")
 
-include_directories(
-    ${SDL3_ROOT}/include
-    ${LIBCDIO_ROOT}/include
-    ${GEKKONET_ROOT}/include
-    ${SDL3_NET_ROOT}/include
-    ${MINIZIP_NG_ROOT}/include
-    ${TF_PSA_CRYPTO_ROOT}/include
-)
+    include_directories(
+        ${MINIZIP_NG_ROOT}/include
+    )
+else()
+    find_package(OpenGL REQUIRED)
+
+    set(SDL3_ROOT          "${THIRD_PARTY_DIR}/sdl3/build")
+    set(LIBCDIO_ROOT       "${THIRD_PARTY_DIR}/libcdio/build")
+    set(GEKKONET_ROOT      "${THIRD_PARTY_DIR}/GekkoNet/build")
+    set(SDL3_NET_ROOT      "${THIRD_PARTY_DIR}/SDL_net/build")
+    set(MINIZIP_NG_ROOT    "${THIRD_PARTY_DIR}/minizip-ng/build")
+    set(TF_PSA_CRYPTO_ROOT "${THIRD_PARTY_DIR}/tf-psa-crypto/build")
+
+    include_directories(
+        ${SDL3_ROOT}/include
+        ${LIBCDIO_ROOT}/include
+        ${GEKKONET_ROOT}/include
+        ${SDL3_NET_ROOT}/include
+        ${MINIZIP_NG_ROOT}/include
+        ${TF_PSA_CRYPTO_ROOT}/include
+    )
+endif()
 
 if(PSP)
     target_link_libraries(3sx PRIVATE
@@ -206,6 +229,32 @@ if(PSP)
         psphprm
         pspctrl
         psppower
+    )
+elseif(VITA)
+    target_link_libraries(3sx PRIVATE
+        vita2d
+        SDL3
+        "${MINIZIP_NG_ROOT}/lib/libminizip-ng.a"
+        ZLIB::ZLIB
+        m
+        SceGxm_stub
+        SceDisplay_stub
+        SceCtrl_stub
+        SceAppMgr_stub
+        SceAppUtil_stub
+        SceAudio_stub
+        SceAudioIn_stub
+        SceSysmodule_stub
+        SceIofilemgr_stub
+        SceCommonDialog_stub
+        SceTouch_stub
+        SceHid_stub
+        SceMotion_stub
+        ScePower_stub
+        SceProcessmgr_stub
+        SceCamera_stub
+        ScePgf_stub
+        ScePvf_stub
     )
 else()
     target_link_libraries(3sx PRIVATE
@@ -240,7 +289,7 @@ elseif(WIN32)
         "$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:--for-linker>"
         "$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:--pdb=3sx.pdb>"
     )
-elseif(UNIX)
+elseif(UNIX AND NOT VITA)
     target_link_libraries(3sx PRIVATE
         ${SDL3_ROOT}/lib/libSDL3.so
     )
@@ -330,7 +379,7 @@ elseif(WIN32)
     install(DIRECTORY "${ASSETS_DIR}/"
         DESTINATION bin/assets
     )
-elseif(UNIX)
+elseif(UNIX AND NOT VITA)
     install(TARGETS 3sx
         RUNTIME DESTINATION bin
     )
@@ -375,6 +424,28 @@ if(PSP)
         PREVIEW_PATH NULL
         TITLE "3SX"
         VERSION 0.1
+    )
+elseif(VITA)
+    include("${VITASDK}/share/vita.cmake" REQUIRED)
+
+    set(VITA_APP_NAME "3SX")
+    set(VITA_TITLE_ID "TSXV00001")
+    set(VITA_VERSION "01.00")
+    set(VITA_SCE_SYS_DIR "${CMAKE_SOURCE_DIR}/tools/vita/sce_sys")
+    set(VITA_MKSFOEX_FLAGS "-d PARENTAL_LEVEL=1")
+
+    vita_create_self(3sx.self 3sx)
+    vita_create_vpk(3sx.vpk ${VITA_TITLE_ID} 3sx.self
+        VERSION ${VITA_VERSION}
+        NAME ${VITA_APP_NAME}
+        FILE ${ASSETS_DIR}/glyphs.bmp assets/glyphs.bmp
+        FILE ${ASSETS_DIR}/xbox_buttons.bmp assets/xbox_buttons.bmp
+        FILE ${VITA_SCE_SYS_DIR}/icon0.png sce_sys/icon0.png
+        FILE ${VITA_SCE_SYS_DIR}/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
+        FILE ${VITA_SCE_SYS_DIR}/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
+        FILE ${VITA_SCE_SYS_DIR}/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
+        FILE ${CMAKE_SOURCE_DIR}/LICENSE licenses/LICENSE
+        FILE ${CMAKE_SOURCE_DIR}/THIRD_PARTY_NOTICES.txt licenses/THIRD_PARTY_NOTICES.txt
     )
 else()
     set(CPACK_PACKAGE_NAME "3SX")

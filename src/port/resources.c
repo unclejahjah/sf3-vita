@@ -37,6 +37,19 @@ char* Resources_GetPath(const char* file_path) {
 const char* Resources_GetAFSPath() {
     if (afs_path == NULL) {
         afs_path = Resources_GetPath("SF33RD.AFS");
+
+#if CRS_APP_DRIVER_VITA
+        // Also accept the archive dropped next to the resources folder
+        char* alt_path = NULL;
+        SDL_asprintf(&alt_path, "%sSF33RD.AFS", Paths_GetPrefPath());
+
+        if (!file_exists(afs_path) && file_exists(alt_path)) {
+            SDL_free((void*)afs_path);
+            afs_path = alt_path;
+        } else {
+            SDL_free(alt_path);
+        }
+#endif
     }
 
     return afs_path;
