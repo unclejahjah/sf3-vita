@@ -48,6 +48,8 @@ To track progress towards version 1.0 check our [1.0 milestone](https://github.c
 
 All documentation (including the build guide) can be found in [docs](docs) folder.
 
+This fork adds a PS Vita port. See [docs/vita.md](docs/vita.md).
+
 ## Community
 
 Join `Crowded Street` server on Discord to discuss the project, report bugs or share your ideas!

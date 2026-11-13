@@ -104,3 +104,15 @@ License MIT license, as provided by Omar Cornut
 
 Copyright:
 - Copyright (C) Omar Cornut.
+
+vita2d (PS Vita build only)
+---------------------------
+Upstream: https://github.com/xerpi/libvita2d
+
+3SX links against:
+- vita2d
+
+License: MIT license, as provided by the vita2d project.
+
+Copyright:
+- Copyright (C) xerpi and vita2d contributors.
