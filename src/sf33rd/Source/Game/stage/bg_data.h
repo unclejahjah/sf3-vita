@@ -1,0 +1,155 @@
+#ifndef BG_DATA_H
+#define BG_DATA_H
+
+#include "sf33rd/Source/Game/stage/bg.h"
+#include "types.h"
+
+typedef struct {
+    u32 bg_num;
+    u32 rwgbix;
+    const s16* rw_ptr;
+} bgrw_data_tbl_elem;
+
+/// A chip drawn outside a layer's 1024x1024 plane
+typedef struct {
+    s16 bg_num;
+    s16 x; // Position in the plane's coordinates
+    s16 y;
+    s16 gbix; // -1 ends a list
+} bg_outer_chip_elem;
+
+/// An animation that shows other chips in place of a layer's chips 32-63, indexed by frame and chip. A chip equal to
+/// the layer's own leaves it to the area's other animations.
+typedef struct {
+    s16 bg_num;
+    const s16 (*chips)[32];
+} bg_layer_anim_elem;
+
+typedef struct {
+    bg_layer_anim_elem anims[BG_LAYER_ANIMS];
+} bg_layer_frames_elem;
+
+extern const u8 use_scr[AREA_COUNT];
+extern const u8 use_real_scr[AREA_COUNT];
+extern const u8 use_family[AREA_COUNT];
+extern const u8 rewrite_scr[AREA_COUNT];
+extern const u8 use_scr2[7];
+extern const u8 stage_bgw_number[AREA_COUNT][3];
+extern const s32 msp[AREA_COUNT][3][2];
+extern const s32 msp2[][3][2];
+extern const u16 stage000_map[64];
+extern const u16 stage001_map[64];
+extern const u16 stage010_map[64];
+extern const u16 stage020_map[64];
+extern const u16 stage021_map[64];
+extern const u16 stage022_map[64];
+extern const u16 stage030_map[64];
+extern const u16 stage031_map[64];
+extern const u16 stage040_map[64];
+extern const u16 stage050_map[64];
+extern const u16 stage051_map[64];
+extern const u16 stage060_map[64];
+extern const u16 stage070_map[64];
+extern const u16 stage071_map[64];
+extern const u16 stage072_map[64];
+extern const u16 stage080_map[64];
+extern const u16 stage081_map[64];
+extern const u16 stage090_map[64];
+extern const u16 stage091_map[64];
+extern const u16 stage100_map[64];
+extern const u16 stage101_map[64];
+extern const u16 stage110_map[64];
+extern const u16 stage120_map[64];
+extern const u16 stage121_map[64];
+extern const u16 stage130_map[64];
+extern const u16 stage131_map[64];
+extern const u16 stage140_map[64];
+extern const u16 stage141_map[64];
+extern const u16 stage142_map[64];
+extern const u16 stage160_map[64];
+extern const u16 stage161_map[64];
+extern const u16 stage170_map[64];
+extern const u16 stage171_map[64];
+extern const u16 stage190_map[64];
+extern const u16 stage191_map[64];
+extern const u16 stage200_map[64];
+extern const u16 bonus010_map[64];
+extern const u16 bonus011_map[64];
+extern const u16 bonus020_map[64];
+extern const u16 select_map[64];
+extern const u16 rank_map[64];
+extern const u16 win_lose_map[64];
+extern const u32 bgtex_stage_gbix[AREA_COUNT][3];
+extern const u32 bgtex_etc_gbix[7];
+extern const u32 stage_priority[AREA_COUNT];
+extern const u32 etc_bg_priority[7];
+extern const u8 stage_opaque[AREA_COUNT];
+extern const s8 bgrw_on[AREA_COUNT][8];
+extern const s16 rw30[113];
+extern const u32 rw30col[8];
+extern const s16 rw31[57];
+extern const u32 rw31col[4];
+extern const s16 rw200[26];
+extern const s16 rw201[11];
+extern const s16 rw202[11];
+extern const bgrw_data_tbl_elem bgrw_data_tbl[28];
+extern const s32 stage03rw_data_tbl[13];
+extern const u8 stage03_flash_tbl[16];
+extern const s32 stage20rw_data_tbl[4];
+extern const u8 stage20_loop_tbl1[16];
+extern const u8 stage20_loop_tbl2[16];
+extern const u8 ake_bg_off[AREA_COUNT];
+extern const s16 limit_tbl3[AREA_COUNT][3][4];
+extern const s8 bg_index_tbl[STAGE_COUNT][3];
+extern const s32 bg_pos_tbl2[7][3][2];
+extern const s8 quake_x_tbl[130];
+extern const s8 quake_y_tbl[130];
+extern const u16* bg_map_tbl[][3];
+extern const u16* bg_map_tbl2[];
+extern const bg_outer_chip_elem* bg_outer_chip_tbl[AREA_COUNT];
+extern const bg_layer_frames_elem bg_layer_frames_tbl[AREA_COUNT];
+extern const u8 bg_repeat_x_tbl[AREA_COUNT];
+
+/// Line scroll of an area's layer, for areas whose line scroll doesn't follow `zuubun`
+typedef s16 (*BgLineScroll)(s16 bgnm, s16 line);
+
+/// Line scroll of each area. NULL for areas that use bg_suzi_line_scroll's.
+extern const BgLineScroll bg_line_scroll_tbl[AREA_COUNT];
+
+// MARK: - Unhandled
+
+extern const u16* scr_bcm[4];
+extern BGW* bgw_ptr;
+
+// MARK: - Serialized
+
+extern s16 y_sitei_pos;
+extern u8 y_sitei_flag;
+extern u8 c_number;
+extern u8 c_kakikae;
+extern u8 g_number[2];
+extern u8 g_kakikae[2];
+extern u8 nosekae;
+extern s16 scrn_adgjust_y;
+extern s16 scrn_adgjust_x;
+extern u16 zoom_add;
+extern s16 ls_cnt1;
+extern s8 bg_app;
+extern s8 sa_pa_flag;
+extern s8 aku_flag;
+extern s8 seraph_flag;
+extern s8 akebono_flag;
+extern MVXY bg_mvxy;
+extern s16 chase_time_y;
+extern s16 chase_time_x;
+extern s16 chase_y;
+extern s16 chase_x;
+extern s8 demo_car_flag[2];
+extern Ideal_W ideal_w;
+extern s8 bg_app_stop;
+extern s16 bg_stop;
+extern s16 base_y_pos;
+extern s32 etcBgPalCnvTable[7];
+extern u8 etcBgGixCnvTable[7][16];
+
+#endif

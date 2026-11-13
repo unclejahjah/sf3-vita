@@ -1,0 +1,36 @@
+#if STATCHECK
+
+#include "test/test_runner_utils.h"
+#include "args.h"
+
+#include <SDL3/SDL.h>
+
+Uint8 read_u8(SDL_IOStream* io, Sint64 offset) {
+    Uint8 result;
+    SDL_SeekIO(io, offset, SDL_IO_SEEK_SET);
+    SDL_ReadU8(io, &result);
+    return result;
+}
+
+Uint16 read_u16(SDL_IOStream* io, Sint64 offset) {
+    Uint16 result;
+    SDL_SeekIO(io, offset, SDL_IO_SEEK_SET);
+    SDL_ReadU16BE(io, &result);
+    return result;
+}
+
+Sint16 read_s16(SDL_IOStream* io, Sint64 offset) {
+    Sint16 result;
+    SDL_SeekIO(io, offset, SDL_IO_SEEK_SET);
+    SDL_ReadS16BE(io, &result);
+    return result;
+}
+
+Sint32 read_s32(SDL_IOStream* io, Sint64 offset) {
+    Sint32 result;
+    SDL_SeekIO(io, offset, SDL_IO_SEEK_SET);
+    SDL_ReadS32BE(io, &result);
+    return result;
+}
+
+#endif
