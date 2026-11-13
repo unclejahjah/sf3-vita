@@ -43,22 +43,34 @@ int _newlib_heap_size_user = 160 * 1024 * 1024;
 unsigned int sceUserMainThreadStackSize = 2 * 1024 * 1024;
 #endif
 
-static FILE* log_file = NULL;
+static char* log_path = NULL;
 
+/// The file is opened and closed for every line. A line that is only flushed can be lost when the game crashes
 static void log_to_file(void* userdata, int category, SDL_LogPriority priority, const char* message) {
-    if (log_file == NULL) {
+    if (log_path == NULL) {
         return;
     }
 
-    fprintf(log_file, "%s\n", message);
-    fflush(log_file);
+    FILE* file = fopen(log_path, "a");
+
+    if (file == NULL) {
+        return;
+    }
+
+    fprintf(file, "%s\n", message);
+    fclose(file);
 }
 
 static void init_log() {
-    char* path = NULL;
-    SDL_asprintf(&path, "%s%s", Paths_GetPrefPath(), LOG_FILE_NAME);
-    log_file = fopen(path, "w");
-    SDL_free(path);
+    SDL_asprintf(&log_path, "%s%s", Paths_GetPrefPath(), LOG_FILE_NAME);
+
+    // Start a new log on every run
+    FILE* file = fopen(log_path, "w");
+
+    if (file != NULL) {
+        fclose(file);
+    }
+
     SDL_SetLogOutputFunction(log_to_file, NULL);
 }
 
@@ -190,11 +202,6 @@ static bool init() {
 static void quit() {
     VitaRenderer_Shutdown();
     SDL_Quit();
-
-    if (log_file != NULL) {
-        fclose(log_file);
-        log_file = NULL;
-    }
 
 #ifdef __vita__
     sceKernelExitProcess(0);

@@ -7,6 +7,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#ifdef __vita__
+#include <psp2/io/fcntl.h>
+#endif
+
 // Inspired by https://github.com/MaikelChan/AFSLib
 
 #define AFS_MAGIC 0x41465300
@@ -39,6 +43,39 @@ static AFS afs = { 0 };
 static ReadRequest* requests = NULL;
 static SDL_IOStream* stream = NULL;
 static size_t _read_chunk_size = 0;
+
+#ifdef __vita__
+/// The archive is read with positioned kernel reads on the Vita.
+/// Seeking in a C stream is not reliable there
+static SceUID vita_fd = -1;
+static bool read_error_logged = false;
+
+static size_t vita_read_at(Sint64 offset, void* buf, size_t size) {
+    size_t total = 0;
+
+    while (total < size) {
+        const int result = sceIoPread(vita_fd, (Uint8*)buf + total, size - total, offset + total);
+
+        if (result <= 0) {
+            if (!read_error_logged) {
+                SDL_Log(
+                    "[AFS] Read failed: result 0x%08X at offset 0x%llX, wanted 0x%X bytes",
+                    (unsigned int)result,
+                    (unsigned long long)(offset + total),
+                    (unsigned int)(size - total)
+                );
+                read_error_logged = true;
+            }
+
+            break;
+        }
+
+        total += result;
+    }
+
+    return total;
+}
+#endif
 
 static void _log(const char* fmt, ...) {
     char buffer[512];
@@ -164,6 +201,18 @@ static bool init_afs(const char* file_path) {
         }
     }
 
+#ifdef __vita__
+    vita_fd = sceIoOpen(file_path, SCE_O_RDONLY, 0);
+
+    if (vita_fd < 0) {
+        SDL_Log("[AFS] Couldn't open %s: 0x%08X", file_path, (unsigned int)vita_fd);
+        SDL_CloseIO(io);
+        return false;
+    }
+
+    SDL_Log("[AFS] %u entries, attributes %s", (unsigned int)afs.entry_count, has_attributes ? "found" : "not found");
+#endif
+
     stream = io;
     return true;
 }
@@ -180,6 +229,13 @@ bool AFS_Init(const char* file_path, size_t read_chunk_size) {
 }
 
 void AFS_Finish() {
+#ifdef __vita__
+    if (vita_fd >= 0) {
+        sceIoClose(vita_fd);
+        vita_fd = -1;
+    }
+#endif
+
     SDL_CloseIO(stream);
     stream = NULL;
     SDL_free((void*)afs.file_path);
@@ -214,10 +270,14 @@ static int find_free_request_slot() {
 
 static void read_into_request(ReadRequest* request, size_t max_read) {
     const Sint64 offset = afs.entries[request->file_num].offset + request->bytes_read;
-    SDL_SeekIO(stream, offset, SDL_IO_SEEK_SET);
-
     const size_t bytes_to_read = SDL_min(request->bytes_to_read, max_read);
+
+#ifdef __vita__
+    const size_t bytes_read = vita_read_at(offset, request->buf + request->bytes_read, bytes_to_read);
+#else
+    SDL_SeekIO(stream, offset, SDL_IO_SEEK_SET);
     const size_t bytes_read = SDL_ReadIO(stream, request->buf + request->bytes_read, bytes_to_read);
+#endif
 
     request->bytes_read += bytes_read;
     request->bytes_to_read -= bytes_read;
