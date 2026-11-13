@@ -224,6 +224,10 @@ int main(int argc, char* argv[]) {
     }
 
     while (poll_sdl_events()) {
+#ifdef __vita__
+        // Without this the console dims the screen and suspends while a demo plays
+        sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DEFAULT);
+#endif
         VitaRenderer_BeginFrame();
         Resource_RunServer();
         Main_StepFrame();

@@ -48,29 +48,51 @@ static size_t _read_chunk_size = 0;
 /// The archive is read with positioned kernel reads on the Vita.
 /// Seeking in a C stream is not reliable there
 static SceUID vita_fd = -1;
-static bool read_error_logged = false;
+static int read_errors_logged = 0;
+
+#define READ_ERRORS_LOGGED_MAX 8
+#define READ_ATTEMPTS_MAX 3
+
+static void vita_reopen() {
+    if (vita_fd >= 0) {
+        sceIoClose(vita_fd);
+    }
+
+    vita_fd = sceIoOpen(afs.file_path, SCE_O_RDONLY, 0);
+}
 
 static size_t vita_read_at(Sint64 offset, void* buf, size_t size) {
     size_t total = 0;
+    int attempts = 0;
 
     while (total < size) {
         const int result = sceIoPread(vita_fd, (Uint8*)buf + total, size - total, offset + total);
 
-        if (result <= 0) {
-            if (!read_error_logged) {
-                SDL_Log(
-                    "[AFS] Read failed: result 0x%08X at offset 0x%llX, wanted 0x%X bytes",
-                    (unsigned int)result,
-                    (unsigned long long)(offset + total),
-                    (unsigned int)(size - total)
-                );
-                read_error_logged = true;
-            }
+        if (result > 0) {
+            total += result;
+            attempts = 0;
+            continue;
+        }
 
+        if (read_errors_logged < READ_ERRORS_LOGGED_MAX) {
+            SDL_Log(
+                "[AFS] Read failed: result 0x%08X at offset 0x%llX, wanted 0x%X bytes, attempt %d",
+                (unsigned int)result,
+                (unsigned long long)(offset + total),
+                (unsigned int)(size - total),
+                attempts + 1
+            );
+            read_errors_logged += 1;
+        }
+
+        attempts += 1;
+
+        if (attempts >= READ_ATTEMPTS_MAX) {
             break;
         }
 
-        total += result;
+        // The handle stops working when the console has been suspended. A new one works again
+        vita_reopen();
     }
 
     return total;
