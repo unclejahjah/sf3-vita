@@ -88,3 +88,18 @@ docker run --rm -v "$PWD":/work -w /work vitasdk/vitasdk bash tools/vita/build-p
 The result is `build/vita/3sx.vpk`. SDL3 and vita2d come with VitaSDK. Only minizip-ng is built from source,
 into `third_party/vita`. If the container has no network access, clone
 [minizip-ng](https://github.com/zlib-ng/minizip-ng) yourself and pass its path in `MINIZIP_NG_SRC`.
+
+### LiveArea art from your own game data
+
+The tracked `tools/vita/sce_sys` holds plain placeholder art. To give the bubble and LiveArea the game's own
+title logo and artwork, cut them from your copy of the game with the desktop build:
+
+```sh
+tools/vita/livearea/capture.sh            # plays the attract mode under Xvfb, saves frames to build/livearea-frames
+python3 -I tools/vita/livearea/compose.py # writes 8-bit indexed PNGs to tools/vita/sce_sys_local
+```
+
+`capture.sh` needs the desktop build (installed with `cmake --install build/application --prefix build/application`),
+Xvfb, ffmpeg, and `SF33RD.AFS` in the desktop data folder. `compose.py` needs Pillow. When
+`tools/vita/sce_sys_local` exists, CMake packs it into the .vpk instead of the placeholders (and adds `pic0.png`).
+The folder is game art: it is in `.gitignore`, so keep it and any .vpk built with it to yourself.

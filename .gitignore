@@ -23,6 +23,7 @@ states
 /rom
 dump
 *.AFS
+/tools/vita/sce_sys_local
 
 # LLMs
 

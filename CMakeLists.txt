@@ -432,6 +432,16 @@ elseif(VITA)
     set(VITA_TITLE_ID "TSXV00001")
     set(VITA_VERSION "01.00")
     set(VITA_SCE_SYS_DIR "${CMAKE_SOURCE_DIR}/tools/vita/sce_sys")
+    set(VITA_SCE_SYS_EXTRA)
+
+    # LiveArea art cut from your own game data by tools/vita/livearea/ (never committed)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/tools/vita/sce_sys_local/livearea/contents/template.xml")
+        set(VITA_SCE_SYS_DIR "${CMAKE_SOURCE_DIR}/tools/vita/sce_sys_local")
+        message(STATUS "Vita: using LiveArea art from ${VITA_SCE_SYS_DIR}")
+    endif()
+    if(EXISTS "${VITA_SCE_SYS_DIR}/pic0.png")
+        list(APPEND VITA_SCE_SYS_EXTRA FILE "${VITA_SCE_SYS_DIR}/pic0.png" sce_sys/pic0.png)
+    endif()
     set(VITA_MKSFOEX_FLAGS "-d PARENTAL_LEVEL=1")
 
     vita_create_self(3sx.self 3sx)
@@ -444,6 +454,7 @@ elseif(VITA)
         FILE ${VITA_SCE_SYS_DIR}/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
         FILE ${VITA_SCE_SYS_DIR}/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
         FILE ${VITA_SCE_SYS_DIR}/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
+        ${VITA_SCE_SYS_EXTRA}
         FILE ${CMAKE_SOURCE_DIR}/LICENSE licenses/LICENSE
         FILE ${CMAKE_SOURCE_DIR}/THIRD_PARTY_NOTICES.txt licenses/THIRD_PARTY_NOTICES.txt
     )
