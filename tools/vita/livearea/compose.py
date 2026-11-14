@@ -17,7 +17,7 @@ import os
 import shutil
 import sys
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 FRAMES_DIR = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO_ROOT, "build", "livearea-frames")
@@ -55,6 +55,32 @@ def pick(frames, test, what):
     return chosen[1]
 
 
+CREDIT = ["3SX by the crowded-street team", "github.com/crowded-street/3sx"]
+
+
+def credit_font(size):
+    for name in ["DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "LiberationSans-Regular.ttf",
+                 "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "arial.ttf"]:
+        try:
+            return ImageFont.truetype(name, size)
+        except OSError:
+            pass
+    return ImageFont.load_default(size)
+
+
+def add_credit(im, margin=14, size=15):
+    # Credit for the 3SX decompilation this port is built on, bottom right
+    draw = ImageDraw.Draw(im)
+    font = credit_font(size)
+    y = im.height - margin
+    for line in reversed(CREDIT):
+        left, top, right, bottom = draw.textbbox((0, 0), line, font=font)
+        y -= bottom - top
+        draw.text((im.width - margin - (right - left) - left, y - top), line, font=font, fill=(200, 200, 200))
+        y -= 5
+    return im
+
+
 def indexed(im):
     # The Vita only shows 8-bit palette PNGs on the LiveArea
     return im.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
@@ -90,7 +116,7 @@ def main():
     save(on_black((128, 128), emblem, 124), "icon0.png")
 
     # bg.png 840x500: the logo at the top on black (the gate sits in the middle of the page)
-    save(on_black((840, 500), logo, 470, top=8), "livearea/contents/bg.png")
+    save(add_credit(on_black((840, 500), logo, 470, top=8)), "livearea/contents/bg.png")
 
     # startup.png 280x158: the gate, the logo on black
     save(on_black((280, 158), emblem, 264), "livearea/contents/startup.png")
