@@ -3,8 +3,8 @@ name: PS Vita
 # Builds 3sx.vpk on every pull request. Pushing a tag named vita-v* (for example vita-v1.0) also
 # publishes a GitHub release with the .vpk attached.
 #
-# The release .vpk uses the placeholder LiveArea art in tools/vita/sce_sys. It never contains game data
-# or art cut from SF33RD.AFS (tools/vita/sce_sys_local is gitignored and is not in the checkout).
+# The release .vpk uses the LiveArea art in tools/vita/sce_sys. It never contains game data (SF33RD.AFS).
+# tools/vita/sce_sys_local is gitignored local test art and must not be in the checkout.
 
 on:
     pull_request:
@@ -23,7 +23,7 @@ jobs:
           - name: Checkout repository
             uses: actions/checkout@v4
 
-          - name: Make sure no game art is packed
+          - name: Make sure only the tracked LiveArea art is packed
             run: test ! -e tools/vita/sce_sys_local
 
           - name: Build minizip-ng for Vita

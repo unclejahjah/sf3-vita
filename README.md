@@ -19,7 +19,7 @@ A native PS Vita and PS TV port of *Street Fighter III: 3rd Strike – Fight for
 - A sharp 2x picture filter (default) or plain nearest-pixel scaling
 - Two players on a PS TV with two paired controllers (unlocks Versus; not yet tested on a real PS TV)
 - Button layout you can change in the game's Button Config menu
-- A LiveArea page and bubble (see [LiveArea art](#livearea-art-optional))
+- A LiveArea page and bubble with the 3rd Strike title logo, which starts the game from a floating logo
 
 ## What you need
 
@@ -130,18 +130,11 @@ docker run --rm -v "$PWD":/work -w /work vitasdk/vitasdk bash tools/vita/build-p
 The result is `build/vita/3sx.vpk`. More detail, including builds without network access, is in
 [docs/vita.md](docs/vita.md). The desktop build (Windows, macOS, Linux) is described in [docs/building.md](docs/building.md).
 
-### LiveArea art (optional)
+### LiveArea art
 
-The repository only has plain placeholder art for the bubble and LiveArea, because the game's logo belongs to Capcom.
-To use the real title logo, cut it from your own `SF33RD.AFS` with the desktop build:
-
-```sh
-tools/vita/livearea/capture.sh            # plays the attract mode off screen and saves frames
-python3 -I tools/vita/livearea/compose.py # writes the bubble, LiveArea and splash images
-```
-
-The images go to `tools/vita/sce_sys_local/`, which git ignores, and the next Vita build packs them automatically.
-Do not share a .vpk built this way publicly.
+The bubble, LiveArea and splash images are in `tools/vita/sce_sys/`. They were cut from the game's title screen with
+`tools/vita/livearea/capture.sh` and `compose.py`; [docs/vita.md](docs/vita.md#livearea-art) explains how to make them
+again.
 
 ## Credits
 
