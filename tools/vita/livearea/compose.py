@@ -115,11 +115,11 @@ def main():
     # icon0.png 128x128: the logo on black
     save(on_black((128, 128), emblem, 124), "icon0.png")
 
-    # bg.png 840x500: the logo at the top on black (the gate sits in the middle of the page)
-    save(add_credit(on_black((840, 500), logo, 470, top=8)), "livearea/contents/bg.png")
+    # bg.png 840x500: plain black with the 3SX credit; the logo is on the gate only
+    save(add_credit(Image.new("RGB", (840, 500))), "livearea/contents/bg.png")
 
-    # startup.png 280x158: the gate, the logo on black
-    save(on_black((280, 158), emblem, 264), "livearea/contents/startup.png")
+    # startup.png 280x158: the gate (the button that starts the game), the title logo on black
+    save(on_black((280, 158), logo, 220), "livearea/contents/startup.png")
 
     # pic0.png 960x544: shown while the bubble opens; the title screen without the copyright lines
     pic = Image.new("RGB", (960, 544))
