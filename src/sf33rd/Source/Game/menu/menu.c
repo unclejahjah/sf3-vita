@@ -8,6 +8,7 @@
 #include "core/app.h"
 #include "main.h"
 #include "platform/app/sdl/sdl_app.h"
+#include "platform/app/vita/vita_app.h"
 #include "sf33rd/AcrSDK/common/pad.h"
 #include "sf33rd/Source/Game/animation/appear.h"
 #include "sf33rd/Source/Game/effect/eff04.h"
@@ -2005,6 +2006,9 @@ void Screen_Adjust(struct _TASK* task_ptr) {
         break;
 
     case 3:
+#if CRS_APP_DRIVER_VITA
+        VitaApp_ScreenAdjustTick();
+#endif
         Screen_Adjust_Sub(0);
         Screen_Exit_Check(task_ptr, 0);
 

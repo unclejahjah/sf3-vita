@@ -26,6 +26,7 @@
 #include "sf33rd/AcrSDK/common/plcommon.h"
 #include "sf33rd/AcrSDK/ps2/flps2etc.h"
 #include "sf33rd/AcrSDK/ps2/foundaps2.h"
+#include "sf33rd/Source/Game/system/work_sys.h"
 
 #include <SDL3/SDL.h>
 
@@ -118,7 +119,13 @@ static Uint16 current_palette = 0;
 static vita2d_texture* canvas = NULL;
 static vita2d_pgf* message_font = NULL;
 
-/// Where the picture goes on the screen
+static VitaAspect current_aspect = VITA_ASPECT_4_3;
+/// Text for the bottom of the screen. Empty when there is none for this frame
+static char hint[96] = "";
+
+/// Where the picture goes on the screen for the chosen aspect
+static SDL_Rect base_view = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+/// The same after the game's Screen Adjust option has moved and shrunk it
 static SDL_Rect view = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
 /// Game coordinates to vita2d coordinates (vita2d always works in 960x544 units, whatever the target is)
@@ -516,6 +523,18 @@ static void set_transform_for_screen() {
     offset_y = view.y;
 }
 
+/// Apply the position and size from the game's Screen Adjust option.
+/// The position is in game pixels (-10 to 10), the size in percent (94 to 100)
+static void update_view() {
+    const int size_h = SDL_clamp((int)Disp_Size_H, 50, 100);
+    const int size_v = SDL_clamp((int)Disp_Size_V, 50, 100);
+
+    view.w = base_view.w * size_h / 100;
+    view.h = base_view.h * size_v / 100;
+    view.x = base_view.x + (base_view.w - view.w) / 2 + X_Adjust * base_view.w / GAME_WIDTH;
+    view.y = base_view.y + (base_view.h - view.h) / 2 + Y_Adjust * base_view.h / GAME_HEIGHT;
+}
+
 static SDL_Rect view_for_aspect(VitaAspect aspect) {
     int width = SCREEN_WIDTH;
 
@@ -537,6 +556,25 @@ static SDL_Rect view_for_aspect(VitaAspect aspect) {
     width &= ~1;
 
     return (SDL_Rect) { .x = (SCREEN_WIDTH - width) / 2, .y = 0, .w = width, .h = SCREEN_HEIGHT };
+}
+
+/// Draw the hint over the finished picture. Must run while the screen is the draw target
+static void draw_hint() {
+    if (hint[0] == '\0') {
+        return;
+    }
+
+    if (message_font != NULL) {
+        const float text_scale = 1.0f;
+        const int text_width = vita2d_pgf_text_width(message_font, text_scale, hint);
+        const int x = (SCREEN_WIDTH - text_width) / 2;
+        const int y = SCREEN_HEIGHT - 14;
+
+        vita2d_draw_rectangle(x - 12, y - 24, text_width + 24, 34, RGBA8(0, 0, 0, 200));
+        vita2d_pgf_draw_text(message_font, x, y, COLOR_WHITE, text_scale, hint);
+    }
+
+    hint[0] = '\0';
 }
 
 // Public
@@ -561,7 +599,9 @@ bool VitaRenderer_Init(VitaAspect aspect, VitaFilter filter) {
     memset(palettes, 0, FL_PALETTE_MAX * PALETTE_BYTES);
     SDL_zeroa(textures);
 
-    view = view_for_aspect(aspect);
+    current_aspect = aspect;
+    base_view = view_for_aspect(aspect);
+    view = base_view;
 
     if (filter == VITA_FILTER_SHARP) {
         // The alpha channel of the canvas is junk after blending, so read it back as opaque
@@ -607,6 +647,7 @@ void VitaRenderer_BeginFrame() {
 }
 
 void VitaRenderer_RenderFrame() {
+    update_view();
     sort_quads();
     vita2d_pool_reset();
 
@@ -625,6 +666,7 @@ void VitaRenderer_RenderFrame() {
             canvas, view.x, view.y, (float)view.w / CANVAS_WIDTH, (float)view.h / CANVAS_HEIGHT
         );
         vita2d_set_blend_mode_add(0);
+        draw_hint();
         vita2d_end_drawing();
     } else {
         set_transform_for_screen();
@@ -633,8 +675,27 @@ void VitaRenderer_RenderFrame() {
         draw_quads();
         // Sprites may stick out of the picture
         draw_black_bars();
+        draw_hint();
         vita2d_end_drawing();
     }
+}
+
+void VitaRenderer_SetAspect(VitaAspect aspect) {
+    current_aspect = aspect;
+    base_view = view_for_aspect(aspect);
+}
+
+VitaAspect VitaRenderer_GetAspect() {
+    return current_aspect;
+}
+
+void VitaRenderer_ShowHint(const char* text) {
+    // Loaded here and not while drawing, because loading a font takes a moment
+    if (message_font == NULL) {
+        message_font = vita2d_load_default_pgf();
+    }
+
+    SDL_strlcpy(hint, text, sizeof(hint));
 }
 
 void VitaRenderer_EndFrame() {

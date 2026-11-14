@@ -73,7 +73,7 @@ elseif(VITA)
 
         CRS_APP_DRIVER_VITA
         CRS_VIDEO_DRIVER_VITA
-        CRS_INPUT_DRIVER_SDL
+        CRS_INPUT_DRIVER_VITA
 
         SOUND_ENABLED
     )

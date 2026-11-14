@@ -24,6 +24,14 @@ void VitaRenderer_BeginFrame();
 void VitaRenderer_RenderFrame();
 void VitaRenderer_EndFrame();
 
+/// Change how the picture is fitted to the screen. Takes effect on the next frame
+void VitaRenderer_SetAspect(VitaAspect aspect);
+VitaAspect VitaRenderer_GetAspect();
+
+/// Show a line of text at the bottom of the screen on the next frame only.
+/// Call it every frame for as long as the text should stay.
+void VitaRenderer_ShowHint(const char* text);
+
 /// Show a plain text screen (for errors that happen before the game can start).
 /// Lines are separated by '\n'.
 void VitaRenderer_ShowMessage(const char* text);

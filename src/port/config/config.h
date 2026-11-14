@@ -14,6 +14,7 @@
 #if CRS_APP_DRIVER_VITA
 #define CFG_KEY_VITA_ASPECT "vita-aspect"
 #define CFG_KEY_VITA_FILTER "vita-filter"
+#define CFG_KEY_VITA_PERF_LOG "vita-perf-log"
 #endif
 
 /// Initialize config system
@@ -33,5 +34,11 @@ int Config_GetInt(const char* key);
 /// Get the value associated with the given key as a `string`
 /// @return The value associated with `key` if `key` is among entries and the value's type is `string`, `NULL` otherwise
 const char* Config_GetString(const char* key);
+
+/// Set the string value associated with the given key. The change is kept in memory until `Config_Save` is called
+void Config_SetString(const char* key, const char* value);
+
+/// Write the config file with the current values
+void Config_Save();
 
 #endif

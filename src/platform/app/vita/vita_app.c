@@ -1,17 +1,18 @@
 /**
  * @brief PS Vita application driver.
  *
- * Owns the main loop. Drawing goes through the vita2d video driver, buttons and sound through SDL.
+ * Owns the main loop. Drawing goes through the vita2d video driver, buttons through the Vita pad driver and sound through SDL.
  * Everything the game reads or writes lives in ux0:data/3sx/ (see port/paths.c).
  */
 
 #if CRS_APP_DRIVER_VITA
 
 #include "platform/app/vita/vita_app.h"
+#include "platform/app/vita/vita_perf.h"
 
 #include "core/input.h"
 #include "main.h"
-#include "platform/input/sdl/sdl_pad.h"
+#include "platform/input/vita/vita_pad.h"
 #include "platform/video/vita/vita_renderer.h"
 #include "port/config/config.h"
 #include "port/io/resource.h"
@@ -33,6 +34,7 @@
 #include <stdio.h>
 
 #define LOG_FILE_NAME "log.txt"
+#define PERF_FILE_NAME "perf.txt"
 
 /// How much of the archive is read per frame. A memory card manages this without dropping frames
 #define READ_CHUNK_SIZE (64 * 1024)
@@ -84,6 +86,28 @@ static void init_power() {
 #endif
 }
 
+typedef struct AspectChoice {
+    VitaAspect aspect;
+    const char* config_value;
+    const char* label;
+} AspectChoice;
+
+static const AspectChoice aspect_choices[] = {
+    { VITA_ASPECT_4_3, "4:3", "4:3 (arcade)" },
+    { VITA_ASPECT_SQUARE_PIXELS, "square-pixels", "wide (square pixels)" },
+    { VITA_ASPECT_STRETCH, "stretch", "full screen" },
+};
+
+static int aspect_choice_index(VitaAspect aspect) {
+    for (int i = 0; i < SDL_arraysize(aspect_choices); i++) {
+        if (aspect_choices[i].aspect == aspect) {
+            return i;
+        }
+    }
+
+    return 0;
+}
+
 static VitaAspect read_aspect() {
     const char* value = Config_GetString(CFG_KEY_VITA_ASPECT);
 
@@ -91,12 +115,10 @@ static VitaAspect read_aspect() {
         return VITA_ASPECT_4_3;
     }
 
-    if (SDL_strcmp(value, "square-pixels") == 0) {
-        return VITA_ASPECT_SQUARE_PIXELS;
-    }
-
-    if (SDL_strcmp(value, "stretch") == 0) {
-        return VITA_ASPECT_STRETCH;
+    for (int i = 0; i < SDL_arraysize(aspect_choices); i++) {
+        if (SDL_strcmp(value, aspect_choices[i].config_value) == 0) {
+            return aspect_choices[i].aspect;
+        }
     }
 
     return VITA_ASPECT_4_3;
@@ -118,17 +140,14 @@ static bool poll_sdl_events() {
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
-        case SDL_EVENT_GAMEPAD_ADDED:
-        case SDL_EVENT_GAMEPAD_REMOVED:
-            SDLPad_HandleGamepadDeviceEvent(&event.gdevice);
-            break;
-
         case SDL_EVENT_QUIT:
             continue_running = false;
             break;
         }
     }
 
+    // Read the buttons as late as possible before the game uses them
+    VitaPad_Update();
     return continue_running;
 }
 
@@ -150,7 +169,7 @@ static bool init() {
     init_power();
     init_log();
 
-    if (!SDL_Init(SDL_INIT_GAMEPAD)) {
+    if (!SDL_Init(SDL_INIT_EVENTS)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
         return false;
     }
@@ -166,7 +185,7 @@ static bool init() {
         return false;
     }
 
-    SDLPad_Init();
+    VitaPad_Init();
 
     if (!Resources_Check()) {
         char* message = NULL;
@@ -196,6 +215,14 @@ static bool init() {
     }
 
     Main_Init();
+
+    if (Config_GetBool(CFG_KEY_VITA_PERF_LOG)) {
+        char* perf_path = NULL;
+        SDL_asprintf(&perf_path, "%s%s", Paths_GetPrefPath(), PERF_FILE_NAME);
+        VitaPerf_Init(perf_path);
+        SDL_free(perf_path);
+    }
+
     return true;
 }
 
@@ -206,6 +233,31 @@ static void quit() {
 #ifdef __vita__
     sceKernelExitProcess(0);
 #endif
+}
+
+void VitaApp_ScreenAdjustTick() {
+    static bool select_was_down = false;
+
+    Input_ButtonState first_player;
+    Input_ButtonState second_player;
+    Input_GetButtonState(0, &first_player);
+    Input_GetButtonState(1, &second_player);
+
+    const bool select_is_down = first_player.back || second_player.back;
+    int choice = aspect_choice_index(VitaRenderer_GetAspect());
+
+    if (select_is_down && !select_was_down) {
+        choice = (choice + 1) % SDL_arraysize(aspect_choices);
+        VitaRenderer_SetAspect(aspect_choices[choice].aspect);
+        Config_SetString(CFG_KEY_VITA_ASPECT, aspect_choices[choice].config_value);
+        Config_Save();
+    }
+
+    select_was_down = select_is_down;
+
+    char text[96];
+    SDL_snprintf(text, sizeof(text), "SELECT: picture shape   %s", aspect_choices[choice].label);
+    VitaRenderer_ShowHint(text);
 }
 
 void VitaApp_Exit() {
@@ -228,16 +280,25 @@ int main(int argc, char* argv[]) {
         // Without this the console dims the screen and suspends while a demo plays
         sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DEFAULT);
 #endif
+        VitaPerf_BeginFrame();
         VitaRenderer_BeginFrame();
         Resource_RunServer();
+        VitaPerf_EndSection(VITA_PERF_FILES);
         Main_StepFrame();
+        VitaPerf_EndSection(VITA_PERF_GAME);
         ADX_ProcessTracks();
+        VitaPerf_EndSection(VITA_PERF_SOUND);
         VitaRenderer_RenderFrame();
+        VitaPerf_EndSection(VITA_PERF_DRAW);
         // Waits for the display, which is what paces the game
         VitaRenderer_EndFrame();
+        VitaPerf_EndSection(VITA_PERF_WAIT);
         Main_FinishFrame();
+        VitaPerf_EndSection(VITA_PERF_FINISH);
+        VitaPerf_EndFrame();
     }
 
+    VitaPerf_Shutdown();
     Main_Finish();
     Resource_Finish();
     Config_Destroy();

@@ -38,6 +38,7 @@ static const ConfigEntry default_entries[] = {
 #if CRS_APP_DRIVER_VITA
     { .key = CFG_KEY_VITA_ASPECT, .type = CFG_STRING, .value.s = "4:3" },
     { .key = CFG_KEY_VITA_FILTER, .type = CFG_STRING, .value.s = "sharp" },
+    { .key = CFG_KEY_VITA_PERF_LOG, .type = CFG_BOOL, .value.b = true },
 #endif
 };
 
@@ -106,17 +107,38 @@ static void print_config_entry_to_io(SDL_IOStream* io, const ConfigEntry* entry)
     }
 }
 
-static void write_defaults(const char* dst_path) {
+/// Write every known setting with its current value, then the settings from the file that this build doesn't know
+static void write_config(const char* dst_path) {
     SDL_IOStream* io = SDL_IOFromFile(dst_path, "w");
+
+    if (io == NULL) {
+        return;
+    }
+
     io_printf(io,
               "# For the full list of settings see https://github.com/crowded-street/3sx/blob/main/docs/config.md\n\n");
 
     for (int i = 0; i < SDL_arraysize(default_entries); i++) {
-        print_config_entry_to_io(io, &default_entries[i]);
+        print_config_entry_to_io(io, find_entry(default_entries[i].key));
         io_printf(io, "\n");
     }
 
+    for (int i = 0; i < entry_count; i++) {
+        const ConfigEntry* entry = &entries[i];
+
+        if (find_entry_in_array(entry->key, default_entries, SDL_arraysize(default_entries)) == NULL) {
+            print_config_entry_to_io(io, entry);
+            io_printf(io, "\n");
+        }
+    }
+
     SDL_CloseIO(io);
+}
+
+static char* get_config_path() {
+    char* config_path = NULL;
+    SDL_asprintf(&config_path, "%sconfig", Paths_GetPrefPath());
+    return config_path;
 }
 
 static bool dict_iterator(const char* key, const char* value) {
@@ -147,15 +169,12 @@ static bool dict_iterator(const char* key, const char* value) {
 }
 
 void Config_Init() {
-    const char* pref_path = Paths_GetPrefPath();
-    char* config_path;
-    SDL_asprintf(&config_path, "%sconfig", pref_path);
-
+    char* config_path = get_config_path();
     FILE* f = fopen(config_path, "r");
 
     if (f == NULL) {
         // Config doesn't exist. Write defaults
-        write_defaults(config_path);
+        write_config(config_path);
         SDL_free(config_path);
         return;
     }
@@ -163,6 +182,40 @@ void Config_Init() {
     SDL_free(config_path);
     dict_read(f, dict_iterator);
     fclose(f);
+}
+
+void Config_SetString(const char* key, const char* value) {
+    for (int i = 0; i < entry_count; i++) {
+        ConfigEntry* entry = &entries[i];
+
+        if (SDL_strcmp(entry->key, key) != 0) {
+            continue;
+        }
+
+        if (entry->type == CFG_STRING) {
+            SDL_free(entry->value.s);
+        }
+
+        entry->type = CFG_STRING;
+        entry->value.s = SDL_strdup(value);
+        return;
+    }
+
+    if (entry_count == CONFIG_ENTRIES_MAX) {
+        return;
+    }
+
+    ConfigEntry* entry = &entries[entry_count];
+    entry->key = SDL_strdup(key);
+    entry->type = CFG_STRING;
+    entry->value.s = SDL_strdup(value);
+    entry_count += 1;
+}
+
+void Config_Save() {
+    char* config_path = get_config_path();
+    write_config(config_path);
+    SDL_free(config_path);
 }
 
 void Config_Destroy() {

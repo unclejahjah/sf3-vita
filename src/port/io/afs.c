@@ -11,6 +11,10 @@
 #include <psp2/io/fcntl.h>
 #endif
 
+#if CRS_APP_DRIVER_VITA
+#include "platform/app/vita/vita_perf.h"
+#endif
+
 // Inspired by https://github.com/MaikelChan/AFSLib
 
 #define AFS_MAGIC 0x41465300
@@ -295,7 +299,13 @@ static void read_into_request(ReadRequest* request, size_t max_read) {
     const size_t bytes_to_read = SDL_min(request->bytes_to_read, max_read);
 
 #ifdef __vita__
+    const double read_start = VitaPerf_Now();
     const size_t bytes_read = vita_read_at(offset, request->buf + request->bytes_read, bytes_to_read);
+    const double read_time = VitaPerf_Now() - read_start;
+
+    if (read_time > 2.0) {
+        VitaPerf_Note("read file %d, %u bytes, %.1f ms", (int)request->file_num, (unsigned int)bytes_read, read_time);
+    }
 #else
     SDL_SeekIO(stream, offset, SDL_IO_SEEK_SET);
     const size_t bytes_read = SDL_ReadIO(stream, request->buf + request->bytes_read, bytes_to_read);

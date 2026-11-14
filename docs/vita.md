@@ -32,6 +32,15 @@ If the file is missing, the game shows a message that says where it looked.
 The Vita has no L2/R2, so the default layout puts heavy kick on L. Buttons can be changed in the game's
 button config menu.
 
+On a PS TV the first controller is player 1 and the next paired controller is player 2, which unlocks Versus.
+A controller can be paired while the game is running.
+
+## Screen Adjust
+
+The game's own Screen Adjust page (Option menu) works on the Vita: the position and size settings move and shrink
+the picture. On the same page, SELECT switches the picture shape between 4:3, wide and full screen. The choice
+is saved as `vita-aspect` in the config file.
+
 ## Settings
 
 The config file is `ux0:data/3sx/config`. It is created on the first start. Besides the general
@@ -39,7 +48,7 @@ The config file is `ux0:data/3sx/config`. It is created on the first start. Besi
 
 ### `vita-aspect`
 
-How the 384x224 picture is fitted to the 960x544 screen.
+How the 384x224 picture is fitted to the 960x544 screen. It can also be changed in the game, see Screen Adjust.
 
 - `4:3` (default): the shape of the arcade monitor, with black bars on the sides.
 - `square-pixels`: every game pixel is square. Nearly fills the screen.
@@ -50,9 +59,15 @@ How the 384x224 picture is fitted to the 960x544 screen.
 - `sharp` (default): the game is drawn at twice its resolution and then scaled smoothly. Crisp pixels without shimmer.
 - `nearest`: the game is drawn straight to the screen without smoothing. A little cheaper for the GPU.
 
+### `vita-perf-log`
+
+`true` (default) records every frame that took too long to `ux0:data/3sx/perf.txt`, with the time each part of
+the frame took and a summary every ten seconds. Set it to `false` to turn the recording off.
+
 ## Troubleshooting
 
-A log is written to `ux0:data/3sx/log.txt` on every start. Please attach it to bug reports.
+A log is written to `ux0:data/3sx/log.txt` on every start. Please attach it to bug reports, together with
+`perf.txt` if the report is about speed.
 
 ## Known differences from the desktop version
 
