@@ -21,12 +21,21 @@ void EFF63_SUDDENLY(WORK_Other_CONN* /* unused */);
 void Disp_63_Sub(WORK_Other_CONN* ewk);
 void Setup_Letter_63(WORK_Other_CONN* ewk, s16 disp_index);
 
-const char* Letter_Data_63[3][21] = { { "-10", "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "0",
+const char* Letter_Data_63[4][21] = { { "-10", "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "0",
                                         "1",   "2",  "3",  "4",  "5",  "6",  "7",  "8",  "9",  "10" },
                                       { "94%", "96%", "98%", "100%", NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                                         NULL,  NULL,  NULL,  NULL,   NULL, NULL, NULL, NULL, NULL, NULL },
                                       { "OFF", "ON", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                                        NULL,  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } };
+                                        NULL,  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
+                                      { "NORMAL", "WIDE", "FULL", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                        NULL,     NULL,   NULL,   NULL, NULL, NULL, NULL, NULL, NULL, NULL } };
+
+/// Letters of the large and of the small menu font
+#define LARGE_LETTERS 0x7047
+#define SMALL_LETTERS 0x70A7
+
+/// Where the rows of the compact layout start in `Slide_Pos_Data_63`
+#define COMPACT_POS_BASE 5
 
 void (*const EFF63_Jmp_Tbl[4])(WORK_Other_CONN*) = { EFF63_WAIT, EFF63_SLIDE_IN, EFF63_CHAR_CHANGE, EFF63_SUDDENLY };
 
@@ -73,10 +82,11 @@ void EFF63_SLIDE_IN(WORK_Other_CONN* ewk) {
         ewk->wu.routine_no[1]++;
         ewk->wu.disp_flag = 1;
         ewk->wu.xyz[0].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Slide_Pos_Data_63[ewk->wu.type][0] + 384;
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Slide_Pos_Data_63[ewk->wu.type][1];
+            bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Slide_Pos_Data_63[ewk->wu.cg_type][0] + 384;
+        ewk->wu.xyz[1].disp.pos =
+            bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Slide_Pos_Data_63[ewk->wu.cg_type][1];
         ewk->wu.position_z = 68;
-        ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Slide_Pos_Data_63[ewk->wu.type][0];
+        ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Slide_Pos_Data_63[ewk->wu.cg_type][0];
         ewk->wu.mvxy.a[0].sp = -0x400000;
         ewk->wu.mvxy.d[0].sp = 0x50000;
         break;
@@ -115,7 +125,7 @@ void EFF63_CHAR_CHANGE(WORK_Other_CONN* /* unused */) {}
 
 void EFF63_SUDDENLY(WORK_Other_CONN* /* unused */) {}
 
-s32 effect_63_init(u8 dir_old, s16 sync_bg, s16 master_player, s16 letter_type, s16 cursor_index) {
+static s32 init_63(u8 dir_old, s16 sync_bg, s16 master_player, s16 letter_type, s16 cursor_index, bool compact) {
     WORK_Other_CONN* ewk;
     s16 ix;
 
@@ -143,16 +153,27 @@ s32 effect_63_init(u8 dir_old, s16 sync_bg, s16 master_player, s16 letter_type, 
         break;
 
     default:
-        ewk->wu.dir_step = 2;
+        ewk->wu.dir_step = compact ? 3 : 2;
         break;
     }
 
+    // Both fields are free in this effect. They hold the font and the row of `Slide_Pos_Data_63`
+    ewk->wu.old_cgnum = compact ? SMALL_LETTERS : LARGE_LETTERS;
+    ewk->wu.cg_type = compact ? (COMPACT_POS_BASE + cursor_index) : cursor_index;
     ewk->wu.dir_old = dir_old;
     ewk->master_player = master_player;
     ewk->wu.my_mts = 13;
     ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
     Disp_63_Sub(ewk);
     return 0;
+}
+
+s32 effect_63_init(u8 dir_old, s16 sync_bg, s16 master_player, s16 letter_type, s16 cursor_index) {
+    return init_63(dir_old, sync_bg, master_player, letter_type, cursor_index, false);
+}
+
+s32 effect_63_init_compact(u8 dir_old, s16 sync_bg, s16 master_player, s16 letter_type, s16 cursor_index) {
+    return init_63(dir_old, sync_bg, master_player, letter_type, cursor_index, true);
 }
 
 void Disp_63_Sub(WORK_Other_CONN* ewk) {
@@ -178,7 +199,12 @@ void Disp_63_Sub(WORK_Other_CONN* ewk) {
         break;
 
     default:
-        disp_index = sys_w.screen_mode;
+        if (ewk->wu.dir_step == 3) {
+            disp_index = Convert_Buff[2][0][SCREEN_ADJUST_SHAPE_SLOT];
+        } else {
+            disp_index = sys_w.screen_mode;
+        }
+
         break;
     }
 
@@ -187,12 +213,13 @@ void Disp_63_Sub(WORK_Other_CONN* ewk) {
 
 void Setup_Letter_63(WORK_Other_CONN* ewk, s16 disp_index) {
     const u8* ptr = (u8*)Letter_Data_63[ewk->wu.dir_step][disp_index];
+    const s16 letter_width = (ewk->wu.old_cgnum == SMALL_LETTERS) ? 8 : 16;
     s16 ix = 0;
     s16 x = 0;
 
     while (*ptr != '\0') {
         if (*ptr == ' ') {
-            x += 12;
+            x += letter_width * 3 / 4;
             ptr++;
             continue;
         }
@@ -200,8 +227,8 @@ void Setup_Letter_63(WORK_Other_CONN* ewk, s16 disp_index) {
         ewk->conn[ix].nx = x;
         ewk->conn[ix].ny = 0;
         ewk->conn[ix].col = 0;
-        ewk->conn[ix].chr = *ptr + 0x7047;
-        x += 16;
+        ewk->conn[ix].chr = *ptr + ewk->wu.old_cgnum;
+        x += letter_width;
         ptr++;
         ix++;
     }

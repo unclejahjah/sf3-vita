@@ -38,8 +38,9 @@ A controller can be paired while the game is running.
 ## Screen Adjust
 
 The game's own Screen Adjust page (Option menu) works on the Vita: the position and size settings move and shrink
-the picture. On the same page, SELECT switches the picture shape between 4:3, wide and full screen. The choice
-is saved as `vita-aspect` in the config file.
+the picture. The page has one more row on the Vita, SCREEN SHAPE, which switches the picture between NORMAL (4:3),
+WIDE and FULL (the whole screen). The choice is saved as `vita-aspect` in the config file. To make room for
+the extra row, the page is written in the game's small menu font.
 
 ## Settings
 

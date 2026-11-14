@@ -120,8 +120,6 @@ static vita2d_texture* canvas = NULL;
 static vita2d_pgf* message_font = NULL;
 
 static VitaAspect current_aspect = VITA_ASPECT_4_3;
-/// Text for the bottom of the screen. Empty when there is none for this frame
-static char hint[96] = "";
 
 /// Where the picture goes on the screen for the chosen aspect
 static SDL_Rect base_view = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
@@ -558,25 +556,6 @@ static SDL_Rect view_for_aspect(VitaAspect aspect) {
     return (SDL_Rect) { .x = (SCREEN_WIDTH - width) / 2, .y = 0, .w = width, .h = SCREEN_HEIGHT };
 }
 
-/// Draw the hint over the finished picture. Must run while the screen is the draw target
-static void draw_hint() {
-    if (hint[0] == '\0') {
-        return;
-    }
-
-    if (message_font != NULL) {
-        const float text_scale = 1.0f;
-        const int text_width = vita2d_pgf_text_width(message_font, text_scale, hint);
-        const int x = (SCREEN_WIDTH - text_width) / 2;
-        const int y = SCREEN_HEIGHT - 14;
-
-        vita2d_draw_rectangle(x - 12, y - 24, text_width + 24, 34, RGBA8(0, 0, 0, 200));
-        vita2d_pgf_draw_text(message_font, x, y, COLOR_WHITE, text_scale, hint);
-    }
-
-    hint[0] = '\0';
-}
-
 // Public
 
 bool VitaRenderer_Init(VitaAspect aspect, VitaFilter filter) {
@@ -666,7 +645,6 @@ void VitaRenderer_RenderFrame() {
             canvas, view.x, view.y, (float)view.w / CANVAS_WIDTH, (float)view.h / CANVAS_HEIGHT
         );
         vita2d_set_blend_mode_add(0);
-        draw_hint();
         vita2d_end_drawing();
     } else {
         set_transform_for_screen();
@@ -675,7 +653,6 @@ void VitaRenderer_RenderFrame() {
         draw_quads();
         // Sprites may stick out of the picture
         draw_black_bars();
-        draw_hint();
         vita2d_end_drawing();
     }
 }
@@ -687,15 +664,6 @@ void VitaRenderer_SetAspect(VitaAspect aspect) {
 
 VitaAspect VitaRenderer_GetAspect() {
     return current_aspect;
-}
-
-void VitaRenderer_ShowHint(const char* text) {
-    // Loaded here and not while drawing, because loading a font takes a moment
-    if (message_font == NULL) {
-        message_font = vita2d_load_default_pgf();
-    }
-
-    SDL_strlcpy(hint, text, sizeof(hint));
 }
 
 void VitaRenderer_EndFrame() {

@@ -89,13 +89,12 @@ static void init_power() {
 typedef struct AspectChoice {
     VitaAspect aspect;
     const char* config_value;
-    const char* label;
 } AspectChoice;
 
 static const AspectChoice aspect_choices[] = {
-    { VITA_ASPECT_4_3, "4:3", "4:3 (arcade)" },
-    { VITA_ASPECT_SQUARE_PIXELS, "square-pixels", "wide (square pixels)" },
-    { VITA_ASPECT_STRETCH, "stretch", "full screen" },
+    { VITA_ASPECT_4_3, "4:3" },
+    { VITA_ASPECT_SQUARE_PIXELS, "square-pixels" },
+    { VITA_ASPECT_STRETCH, "stretch" },
 };
 
 static int aspect_choice_index(VitaAspect aspect) {
@@ -235,29 +234,21 @@ static void quit() {
 #endif
 }
 
-void VitaApp_ScreenAdjustTick() {
-    static bool select_was_down = false;
+int VitaApp_GetPictureShape() {
+    return aspect_choice_index(VitaRenderer_GetAspect());
+}
 
-    Input_ButtonState first_player;
-    Input_ButtonState second_player;
-    Input_GetButtonState(0, &first_player);
-    Input_GetButtonState(1, &second_player);
+void VitaApp_SetPictureShape(int shape) {
+    const int count = SDL_arraysize(aspect_choices);
+    const int choice = ((shape % count) + count) % count;
 
-    const bool select_is_down = first_player.back || second_player.back;
-    int choice = aspect_choice_index(VitaRenderer_GetAspect());
-
-    if (select_is_down && !select_was_down) {
-        choice = (choice + 1) % SDL_arraysize(aspect_choices);
-        VitaRenderer_SetAspect(aspect_choices[choice].aspect);
-        Config_SetString(CFG_KEY_VITA_ASPECT, aspect_choices[choice].config_value);
-        Config_Save();
+    if (choice == VitaApp_GetPictureShape()) {
+        return;
     }
 
-    select_was_down = select_is_down;
-
-    char text[96];
-    SDL_snprintf(text, sizeof(text), "SELECT: picture shape   %s", aspect_choices[choice].label);
-    VitaRenderer_ShowHint(text);
+    VitaRenderer_SetAspect(aspect_choices[choice].aspect);
+    Config_SetString(CFG_KEY_VITA_ASPECT, aspect_choices[choice].config_value);
+    Config_Save();
 }
 
 void VitaApp_Exit() {

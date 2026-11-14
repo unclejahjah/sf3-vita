@@ -1936,6 +1936,25 @@ void Return_Option_Mode_Sub(struct _TASK* task_ptr) {
     Cursor_Y_Pos[1][2] = Menu_Cursor_Y[1];
 }
 
+/// The Vita's Screen Adjust page has one more row, which chooses how the picture is fitted to the screen.
+/// All rows are then written in the small font so that eight of them fit
+#if !defined(SCREEN_ADJUST_HAS_SHAPE)
+#define SCREEN_ADJUST_HAS_SHAPE CRS_APP_DRIVER_VITA
+#endif
+
+#if SCREEN_ADJUST_HAS_SHAPE
+#define SCREEN_ADJUST_ROW_SHAPE 4
+#define SCREEN_ADJUST_ROW_LANGUAGE 5
+#define SCREEN_ADJUST_ROW_DEFAULT 6
+#define SCREEN_ADJUST_ROW_EXIT 7
+#define SCREEN_ADJUST_LANGUAGE_SLOT 5
+#else
+#define SCREEN_ADJUST_ROW_LANGUAGE 4
+#define SCREEN_ADJUST_ROW_DEFAULT 5
+#define SCREEN_ADJUST_ROW_EXIT 6
+#define SCREEN_ADJUST_LANGUAGE_SLOT 4
+#endif
+
 void Screen_Adjust(struct _TASK* task_ptr) {
     s16 char_index;
     s16 ix;
@@ -1971,6 +1990,29 @@ void Screen_Adjust(struct _TASK* task_ptr) {
 
         Convert_Buff[2][0][4] = mpp_w.language;
 
+#if SCREEN_ADJUST_HAS_SHAPE
+        Convert_Buff[2][0][SCREEN_ADJUST_LANGUAGE_SLOT] = mpp_w.language;
+        Convert_Buff[2][0][SCREEN_ADJUST_SHAPE_SLOT] = VitaApp_GetPictureShape();
+
+        for (ix = 0; ix <= SCREEN_ADJUST_ROW_SHAPE; ix++) {
+            effect_63_init_compact(ix + 0x66, 0, 2, ix, ix);
+            Order[ix + 0x66] = 1;
+            Order_Dir[ix + 0x66] = 4;
+            Order_Timer[ix + 0x66] = ix + 0x14;
+        }
+
+        effect_64_init(0x6B, 0, 2, 9, SCREEN_ADJUST_ROW_LANGUAGE, 0x70A7, 19, 2, 0);
+        Order[0x6B] = 1;
+        Order_Dir[0x6B] = 4;
+        Order_Timer[0x6B] = 0x19;
+
+        for (ix = 0, unused_s3 = char_index = 67; ix <= SCREEN_ADJUST_ROW_EXIT; ix++, unused_s2 = char_index++) {
+            effect_61_init(0, ix + 0x50, 0, 2, char_index, ix, 0x70A7);
+            Order[ix + 0x50] = 1;
+            Order_Dir[ix + 0x50] = 4;
+            Order_Timer[ix + 0x50] = ix + 0x14;
+        }
+#else
         for (ix = 0; ix < 4; ix++) {
             effect_63_init(ix + 0x66, 0, 2, ix, ix);
             Order[ix + 0x66] = 1;
@@ -1989,6 +2031,7 @@ void Screen_Adjust(struct _TASK* task_ptr) {
             Order_Dir[ix + 0x50] = 4;
             Order_Timer[ix + 0x50] = ix + 0x14;
         }
+#endif
 
         Menu_Cursor_Move = 5;
         break;
@@ -2006,9 +2049,6 @@ void Screen_Adjust(struct _TASK* task_ptr) {
         break;
 
     case 3:
-#if CRS_APP_DRIVER_VITA
-        VitaApp_ScreenAdjustTick();
-#endif
         Screen_Adjust_Sub(0);
         Screen_Exit_Check(task_ptr, 0);
 
@@ -2026,13 +2066,18 @@ void Screen_Adjust_Sub(s16 PL_id) {
     u16 sw;
     sw = ~plsw_01[PL_id] & plsw_00[PL_id];
     sw = Check_Menu_Lever(PL_id, 0);
-    MC_Move_Sub(sw, 0, 6, 0xFF);
+    MC_Move_Sub(sw, 0, SCREEN_ADJUST_ROW_EXIT, 0xFF);
     Screen_Move_Sub_LR(sw);
     Convert_Buff[2][0][0] = X_Adjust_Buff[2] & 0xFF;
     Convert_Buff[2][0][1] = Y_Adjust_Buff[2] & 0xFF;
     Convert_Buff[2][0][2] = dspwhPack(Disp_Size_H, Disp_Size_V);
     save_w[1].Screen_Size = dspwhPack(Disp_Size_H, Disp_Size_V);
     Convert_Buff[2][0][4] = mpp_w.language;
+
+#if SCREEN_ADJUST_HAS_SHAPE
+    Convert_Buff[2][0][SCREEN_ADJUST_LANGUAGE_SLOT] = mpp_w.language;
+    Convert_Buff[2][0][SCREEN_ADJUST_SHAPE_SLOT] = VitaApp_GetPictureShape();
+#endif
 }
 
 void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
@@ -2045,7 +2090,7 @@ void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
         return;
     }
 
-    if (Menu_Cursor_Y[0] == 6 || IO_Result == 0x200) {
+    if (Menu_Cursor_Y[0] == SCREEN_ADJUST_ROW_EXIT || IO_Result == 0x200) {
         SE_selected();
         Menu_Suicide[1] = 0;
         Menu_Suicide[2] = 1;
@@ -2067,13 +2112,16 @@ void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
         return;
     }
 
-    if (Menu_Cursor_Y[PL_id] == 5) {
+    if (Menu_Cursor_Y[PL_id] == SCREEN_ADJUST_ROW_DEFAULT) {
         SE_selected();
         X_Adjust_Buff[2] = 0;
         Y_Adjust_Buff[2] = 0;
         Disp_Size_H = 100;
         Disp_Size_V = 100;
         mpp_w.language = Get_Default_Language();
+#if SCREEN_ADJUST_HAS_SHAPE
+        VitaApp_SetPictureShape(0);
+#endif
     }
 }
 
@@ -2126,7 +2174,14 @@ void Screen_Move_Sub_LR(u16 sw) {
 
             break;
 
-        case 4:
+#if SCREEN_ADJUST_HAS_SHAPE
+        case SCREEN_ADJUST_ROW_SHAPE:
+            VitaApp_SetPictureShape(VitaApp_GetPictureShape() - 1);
+            flag = 1;
+            break;
+#endif
+
+        case SCREEN_ADJUST_ROW_LANGUAGE:
             mpp_w.language = Language_Toggle(mpp_w.language);
             flag = 1;
             break;
@@ -2177,7 +2232,14 @@ void Screen_Move_Sub_LR(u16 sw) {
 
             break;
 
-        case 4:
+#if SCREEN_ADJUST_HAS_SHAPE
+        case SCREEN_ADJUST_ROW_SHAPE:
+            VitaApp_SetPictureShape(VitaApp_GetPictureShape() + 1);
+            flag = 1;
+            break;
+#endif
+
+        case SCREEN_ADJUST_ROW_LANGUAGE:
             mpp_w.language = Language_Toggle(mpp_w.language);
             flag = 1;
             break;

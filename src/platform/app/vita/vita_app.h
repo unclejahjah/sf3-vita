@@ -3,8 +3,11 @@
 
 void VitaApp_Exit();
 
-/// Run once per frame while the game's Screen Adjust page is open.
-/// SELECT changes how the picture is fitted to the screen, and the choice is saved to the config file
-void VitaApp_ScreenAdjustTick();
+/// How the picture is fitted to the screen: 0 is 4:3, 1 is wide with square pixels, 2 fills the screen.
+/// This is the SCREEN SHAPE row of the game's Screen Adjust page
+int VitaApp_GetPictureShape();
+
+/// Choose a picture shape and save it to the config file. Values past either end wrap around
+void VitaApp_SetPictureShape(int shape);
 
 #endif

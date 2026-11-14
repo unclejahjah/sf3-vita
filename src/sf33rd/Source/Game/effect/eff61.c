@@ -17,7 +17,7 @@ void EFF61_SLIDE_IN(WORK_Other_CONN* ewk);
 void EFF61_SLIDE_OUT(WORK_Other_CONN* /* unused */);
 void EFF61_SUDDENLY(WORK_Other_CONN* ewk);
 
-const char* Menu_Letter_Data[67] = { "ARCADE",
+const char* Menu_Letter_Data[75] = { "ARCADE",
                                      "VERSUS",
                                      "TRAINING",
                                      "SYSTEM DIRECTION",
@@ -87,6 +87,15 @@ const char* Menu_Letter_Data[67] = { "ARCADE",
                                      "BGM TEST",
                                      "EXIT",
                                      "FIND MATCH",
+                                     "EXIT",
+                                     // Screen Adjust with the picture shape row
+                                     "X POSITION^^^^^",
+                                     "Y POSITION^^^^^",
+                                     "X RANGE^^^^^^^^",
+                                     "Y RANGE^^^^^^^^",
+                                     "SCREEN SHAPE^^^",
+                                     "LANGUAGE^^^^^^^",
+                                     "DEFAULT SETTING",
                                      "EXIT" };
 
 void (*const EFF61_Jmp_Tbl[4])(WORK_Other_CONN*) = { EFF61_WAIT, EFF61_SLIDE_IN, EFF61_SLIDE_OUT, EFF61_SUDDENLY };
