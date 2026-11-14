@@ -1,0 +1,115 @@
+#ifndef GD3RD_H
+#define GD3RD_H
+
+#include "constants.h"
+#include "types.h"
+
+#include <stdbool.h>
+
+typedef enum LoadRequestStatus {
+    LDREQ_STATUS_FREE,
+    LDREQ_STATUS_RUNNING,
+    LDREQ_STATUS_IDLE,
+} LoadRequestStatus;
+
+typedef enum LoadRequestType {
+    LDREQ_INVALID,
+    LDREQ_TEXTURE,
+    LDREQ_COLOR,
+    LDREQ_SCREEN,
+    LDREQ_SOUND,
+    LDREQ_KANJI,
+} LoadRequestType;
+
+typedef enum LoadRequestID {
+    LDREQ_ID_PLAYER_1,
+    LDREQ_ID_PLAYER_2,
+    LDREQ_ID_SHARED,
+} LoadRequestID;
+
+typedef struct {
+    s8 ok;
+    s8 type;
+    s16 key;
+    void* texture_table;
+    void* trans_table;
+} TEX_GRP_LD;
+
+typedef struct LoadRequest {
+    LoadRequestStatus status;
+    LoadRequestType type;
+    LoadRequestID id;
+    u8 rno;
+    u8 ix;
+    u8 frre;
+    s16 key;
+    u8 kokey;
+    u8 group;
+    u8* result;
+    s32 size;
+    u16 fnum;
+    u8 free[2];
+    TEX_GRP_LD* lds;
+} LoadRequest;
+
+typedef enum FileReadStatus {
+    FS_READ_IDLE,
+    FS_READ_READING,
+    FS_READ_ERROR,
+} FileReadStatus;
+
+/// Per-player character data requests
+extern Character plt_req[2];
+
+extern const u8 lpt_seldat[4];
+
+bool fsOpen(u16 fnum);
+void fsClose();
+u32 fsGetFileSize(u16 fnum);
+bool fsCheckCommandExecuting();
+s32 fsRequestFileRead(void* buff);
+FileReadStatus fsCheckFileReaded();
+bool fsFileReadSync(void* buff);
+
+s16 load_it_use_any_key(u16 fnum, u8 kokey, u8 group);
+s32 load_it_use_any_key2(u16 fnum, void** adrs, s16* key, u8 kokey, u8 group);
+bool load_it_use_this_key(u16 fnum, s16 key);
+
+void Init_Load_Request_Queue();
+void Request_LDREQ_Break();
+bool Check_LDREQ_Break();
+
+/// Push load requests for character data
+/// @param id Player ID
+/// @param character Character to load data for
+void Push_LDREQ_Queue_Player(u8 id, Character character);
+
+/// Check if all load requests for player have been processed
+/// @param id Player ID
+bool Check_LDREQ_Queue_Player(u8 id);
+
+/// Process load request queue
+void Check_LDREQ_Queue();
+
+/// Check if load request queue is empty
+bool Check_LDREQ_Clear();
+
+/// Push a single load request
+/// @param ix Index of load request info
+/// @param id Request id
+void Push_LDREQ_Queue_Direct(s16 ix, LoadRequestID id);
+
+bool Check_LDREQ_Queue_Direct(s16 ix);
+
+/// Queue loading the resources of an area, and of the players' metamorphoses
+void Push_LDREQ_Queue_BG(Area area);
+
+/// Queue loading only the resources of an area
+void Push_LDREQ_Queue_Area(Area area);
+
+/// Check if all load requests for an area's resources have been processed
+bool Check_LDREQ_Queue_BG(Area area);
+
+void LDREQ_SetResultFlag(const LoadRequest* request, bool flag);
+
+#endif

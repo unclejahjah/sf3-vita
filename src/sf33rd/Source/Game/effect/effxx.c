@@ -1,0 +1,611 @@
+/**
+ * @file effxx.c
+ * Effect Move and Init Jumptables
+ */
+
+#include "sf33rd/Source/Game/effect/effxx.h"
+#include "common.h"
+#include "sf33rd/Source/Game/effect/eff00.h"
+#include "sf33rd/Source/Game/effect/eff01.h"
+#include "sf33rd/Source/Game/effect/eff02.h"
+#include "sf33rd/Source/Game/effect/eff03.h"
+#include "sf33rd/Source/Game/effect/eff04.h"
+#include "sf33rd/Source/Game/effect/eff05.h"
+#include "sf33rd/Source/Game/effect/eff06.h"
+#include "sf33rd/Source/Game/effect/eff07.h"
+#include "sf33rd/Source/Game/effect/eff08.h"
+#include "sf33rd/Source/Game/effect/eff09.h"
+#include "sf33rd/Source/Game/effect/eff10.h"
+#include "sf33rd/Source/Game/effect/eff11.h"
+#include "sf33rd/Source/Game/effect/eff12.h"
+#include "sf33rd/Source/Game/effect/eff13.h"
+#include "sf33rd/Source/Game/effect/eff14.h"
+#include "sf33rd/Source/Game/effect/eff15.h"
+#include "sf33rd/Source/Game/effect/eff16.h"
+#include "sf33rd/Source/Game/effect/eff17.h"
+#include "sf33rd/Source/Game/effect/eff18.h"
+#include "sf33rd/Source/Game/effect/eff19.h"
+#include "sf33rd/Source/Game/effect/eff20.h"
+#include "sf33rd/Source/Game/effect/eff21.h"
+#include "sf33rd/Source/Game/effect/eff22.h"
+#include "sf33rd/Source/Game/effect/eff23.h"
+#include "sf33rd/Source/Game/effect/eff24.h"
+#include "sf33rd/Source/Game/effect/eff25.h"
+#include "sf33rd/Source/Game/effect/eff26.h"
+#include "sf33rd/Source/Game/effect/eff27.h"
+#include "sf33rd/Source/Game/effect/eff29.h"
+#include "sf33rd/Source/Game/effect/eff30.h"
+#include "sf33rd/Source/Game/effect/eff31.h"
+#include "sf33rd/Source/Game/effect/eff32.h"
+#include "sf33rd/Source/Game/effect/eff33.h"
+#include "sf33rd/Source/Game/effect/eff34.h"
+#include "sf33rd/Source/Game/effect/eff35.h"
+#include "sf33rd/Source/Game/effect/eff36.h"
+#include "sf33rd/Source/Game/effect/eff37.h"
+#include "sf33rd/Source/Game/effect/eff38.h"
+#include "sf33rd/Source/Game/effect/eff39.h"
+#include "sf33rd/Source/Game/effect/eff40.h"
+#include "sf33rd/Source/Game/effect/eff41.h"
+#include "sf33rd/Source/Game/effect/eff42.h"
+#include "sf33rd/Source/Game/effect/eff43.h"
+#include "sf33rd/Source/Game/effect/eff44.h"
+#include "sf33rd/Source/Game/effect/eff45.h"
+#include "sf33rd/Source/Game/effect/eff46.h"
+#include "sf33rd/Source/Game/effect/eff47.h"
+#include "sf33rd/Source/Game/effect/eff48.h"
+#include "sf33rd/Source/Game/effect/eff49.h"
+#include "sf33rd/Source/Game/effect/eff50.h"
+#include "sf33rd/Source/Game/effect/eff51.h"
+#include "sf33rd/Source/Game/effect/eff52.h"
+#include "sf33rd/Source/Game/effect/eff53.h"
+#include "sf33rd/Source/Game/effect/eff54.h"
+#include "sf33rd/Source/Game/effect/eff55.h"
+#include "sf33rd/Source/Game/effect/eff56.h"
+#include "sf33rd/Source/Game/effect/eff57.h"
+#include "sf33rd/Source/Game/effect/eff58.h"
+#include "sf33rd/Source/Game/effect/eff59.h"
+#include "sf33rd/Source/Game/effect/eff60.h"
+#include "sf33rd/Source/Game/effect/eff61.h"
+#include "sf33rd/Source/Game/effect/eff62.h"
+#include "sf33rd/Source/Game/effect/eff63.h"
+#include "sf33rd/Source/Game/effect/eff64.h"
+#include "sf33rd/Source/Game/effect/eff65.h"
+#include "sf33rd/Source/Game/effect/eff66.h"
+#include "sf33rd/Source/Game/effect/eff67.h"
+#include "sf33rd/Source/Game/effect/eff68.h"
+#include "sf33rd/Source/Game/effect/eff69.h"
+#include "sf33rd/Source/Game/effect/eff70.h"
+#include "sf33rd/Source/Game/effect/eff71.h"
+#include "sf33rd/Source/Game/effect/eff72.h"
+#include "sf33rd/Source/Game/effect/eff73.h"
+#include "sf33rd/Source/Game/effect/eff74.h"
+#include "sf33rd/Source/Game/effect/eff75.h"
+#include "sf33rd/Source/Game/effect/eff76.h"
+#include "sf33rd/Source/Game/effect/eff77.h"
+#include "sf33rd/Source/Game/effect/eff78.h"
+#include "sf33rd/Source/Game/effect/eff79.h"
+#include "sf33rd/Source/Game/effect/eff80.h"
+#include "sf33rd/Source/Game/effect/eff81.h"
+#include "sf33rd/Source/Game/effect/eff82.h"
+#include "sf33rd/Source/Game/effect/eff83.h"
+#include "sf33rd/Source/Game/effect/eff84.h"
+#include "sf33rd/Source/Game/effect/eff85.h"
+#include "sf33rd/Source/Game/effect/eff86.h"
+#include "sf33rd/Source/Game/effect/eff90.h"
+#include "sf33rd/Source/Game/effect/eff91.h"
+#include "sf33rd/Source/Game/effect/eff92.h"
+#include "sf33rd/Source/Game/effect/eff93.h"
+#include "sf33rd/Source/Game/effect/eff94.h"
+#include "sf33rd/Source/Game/effect/eff95.h"
+#include "sf33rd/Source/Game/effect/eff96.h"
+#include "sf33rd/Source/Game/effect/eff97.h"
+#include "sf33rd/Source/Game/effect/eff98.h"
+#include "sf33rd/Source/Game/effect/eff99.h"
+#include "sf33rd/Source/Game/effect/effa0.h"
+#include "sf33rd/Source/Game/effect/effa1.h"
+#include "sf33rd/Source/Game/effect/effa2.h"
+#include "sf33rd/Source/Game/effect/effa3.h"
+#include "sf33rd/Source/Game/effect/effa4.h"
+#include "sf33rd/Source/Game/effect/effa5.h"
+#include "sf33rd/Source/Game/effect/effa6.h"
+#include "sf33rd/Source/Game/effect/effa7.h"
+#include "sf33rd/Source/Game/effect/effa8.h"
+#include "sf33rd/Source/Game/effect/effa9.h"
+#include "sf33rd/Source/Game/effect/effb0.h"
+#include "sf33rd/Source/Game/effect/effb1.h"
+#include "sf33rd/Source/Game/effect/effb2.h"
+#include "sf33rd/Source/Game/effect/effb3.h"
+#include "sf33rd/Source/Game/effect/effb4.h"
+#include "sf33rd/Source/Game/effect/effb5.h"
+#include "sf33rd/Source/Game/effect/effb6.h"
+#include "sf33rd/Source/Game/effect/effb7.h"
+#include "sf33rd/Source/Game/effect/effb8.h"
+#include "sf33rd/Source/Game/effect/effb9.h"
+#include "sf33rd/Source/Game/effect/effc0.h"
+#include "sf33rd/Source/Game/effect/effc1.h"
+#include "sf33rd/Source/Game/effect/effc2.h"
+#include "sf33rd/Source/Game/effect/effc3.h"
+#include "sf33rd/Source/Game/effect/effc4.h"
+#include "sf33rd/Source/Game/effect/effc5.h"
+#include "sf33rd/Source/Game/effect/effc6.h"
+#include "sf33rd/Source/Game/effect/effc7.h"
+#include "sf33rd/Source/Game/effect/effc8.h"
+#include "sf33rd/Source/Game/effect/effc9.h"
+#include "sf33rd/Source/Game/effect/effd0.h"
+#include "sf33rd/Source/Game/effect/effd1.h"
+#include "sf33rd/Source/Game/effect/effd3.h"
+#include "sf33rd/Source/Game/effect/effd4.h"
+#include "sf33rd/Source/Game/effect/effd5.h"
+#include "sf33rd/Source/Game/effect/effd6.h"
+#include "sf33rd/Source/Game/effect/effd7.h"
+#include "sf33rd/Source/Game/effect/effd8.h"
+#include "sf33rd/Source/Game/effect/effd9.h"
+#include "sf33rd/Source/Game/effect/effe0.h"
+#include "sf33rd/Source/Game/effect/effe1.h"
+#include "sf33rd/Source/Game/effect/effe2.h"
+#include "sf33rd/Source/Game/effect/effe3.h"
+#include "sf33rd/Source/Game/effect/effe4.h"
+#include "sf33rd/Source/Game/effect/effe5.h"
+#include "sf33rd/Source/Game/effect/effe6.h"
+#include "sf33rd/Source/Game/effect/effe7.h"
+#include "sf33rd/Source/Game/effect/effe8.h"
+#include "sf33rd/Source/Game/effect/effe9.h"
+#include "sf33rd/Source/Game/effect/effect.h"
+#include "sf33rd/Source/Game/effect/efff0.h"
+#include "sf33rd/Source/Game/effect/efff2.h"
+#include "sf33rd/Source/Game/effect/efff5.h"
+#include "sf33rd/Source/Game/effect/efff6.h"
+#include "sf33rd/Source/Game/effect/efff8.h"
+#include "sf33rd/Source/Game/effect/efff9.h"
+#include "sf33rd/Source/Game/effect/effg0.h"
+#include "sf33rd/Source/Game/effect/effg3.h"
+#include "sf33rd/Source/Game/effect/effg4.h"
+#include "sf33rd/Source/Game/effect/effg5.h"
+#include "sf33rd/Source/Game/effect/effg6.h"
+#include "sf33rd/Source/Game/effect/effg7.h"
+#include "sf33rd/Source/Game/effect/effg8.h"
+#include "sf33rd/Source/Game/effect/effg9.h"
+#include "sf33rd/Source/Game/effect/effh0.h"
+#include "sf33rd/Source/Game/effect/effh1.h"
+#include "sf33rd/Source/Game/effect/effh2.h"
+#include "sf33rd/Source/Game/effect/effh6.h"
+#include "sf33rd/Source/Game/effect/effh9.h"
+#include "sf33rd/Source/Game/effect/effi0.h"
+#include "sf33rd/Source/Game/effect/effi3.h"
+#include "sf33rd/Source/Game/effect/effi4.h"
+#include "sf33rd/Source/Game/effect/effi6.h"
+#include "sf33rd/Source/Game/effect/effi7.h"
+#include "sf33rd/Source/Game/effect/effi8.h"
+#include "sf33rd/Source/Game/effect/effi9.h"
+#include "sf33rd/Source/Game/effect/effj0.h"
+#include "sf33rd/Source/Game/effect/effj2.h"
+#include "sf33rd/Source/Game/effect/effj4.h"
+#include "sf33rd/Source/Game/effect/effj6.h"
+#include "sf33rd/Source/Game/effect/effj7.h"
+#include "sf33rd/Source/Game/effect/effj8.h"
+#include "sf33rd/Source/Game/effect/effj9.h"
+#include "sf33rd/Source/Game/effect/effk2.h"
+#include "sf33rd/Source/Game/effect/effk3.h"
+#include "sf33rd/Source/Game/effect/effk4.h"
+#include "sf33rd/Source/Game/effect/effk5.h"
+#include "sf33rd/Source/Game/effect/effk6.h"
+#include "sf33rd/Source/Game/effect/effk7.h"
+#include "sf33rd/Source/Game/effect/effk8.h"
+#include "sf33rd/Source/Game/effect/effk9.h"
+#include "sf33rd/Source/Game/effect/effl0.h"
+#include "sf33rd/Source/Game/effect/effl1.h"
+#include "sf33rd/Source/Game/effect/effl2.h"
+#include "sf33rd/Source/Game/effect/effl3.h"
+#include "sf33rd/Source/Game/effect/effl4.h"
+#include "sf33rd/Source/Game/effect/effl5.h"
+#include "sf33rd/Source/Game/effect/effl6.h"
+#include "sf33rd/Source/Game/effect/effl7.h"
+#include "sf33rd/Source/Game/effect/effl8.h"
+#include "sf33rd/Source/Game/effect/effl9.h"
+#include "sf33rd/Source/Game/effect/effm0.h"
+#include "sf33rd/Source/Game/effect/effm1.h"
+#include "sf33rd/Source/Game/effect/effm2.h"
+#include "sf33rd/Source/Game/effect/effm3.h"
+#include "sf33rd/Source/Game/effect/effm5.h"
+#include "sf33rd/Source/Game/effect/effm6.h"
+#include "sf33rd/Source/Game/effect/effm7.h"
+#include "sf33rd/Source/Game/effect/effm8.h"
+#include "sf33rd/Source/Game/effect/ng/eff07.h"
+#include "sf33rd/Source/Game/effect/ng/eff09.h"
+#include "sf33rd/Source/Game/effect/ng/eff124.h"
+#include "sf33rd/Source/Game/effect/ng/eff18.h"
+#include "sf33rd/Source/Game/effect/ng/eff19.h"
+#include "sf33rd/Source/Game/effect/ng/eff20.h"
+#include "sf33rd/Source/Game/effect/ng/eff23.h"
+#include "sf33rd/Source/Game/effect/ng/eff28.h"
+#include "sf33rd/Source/Game/effect/ng/eff29.h"
+#include "sf33rd/Source/Game/effect/ng/eff34.h"
+#include "sf33rd/Source/Game/effect/ng/eff44.h"
+#include "sf33rd/Source/Game/effect/ng/eff45.h"
+#include "sf33rd/Source/Game/effect/ng/eff47.h"
+#include "sf33rd/Source/Game/effect/ng/eff53.h"
+#include "sf33rd/Source/Game/effect/ng/eff54.h"
+#include "sf33rd/Source/Game/effect/ng/eff55.h"
+#include "sf33rd/Source/Game/effect/ng/eff56.h"
+#include "sf33rd/Source/Game/effect/ng/eff60.h"
+#include "sf33rd/Source/Game/effect/ng/eff61.h"
+#include "sf33rd/Source/Game/effect/ng/eff62.h"
+#include "sf33rd/Source/Game/effect/ng/eff64.h"
+#include "sf33rd/Source/Game/effect/ng/eff65.h"
+#include "sf33rd/Source/Game/effect/ng/eff66.h"
+#include "sf33rd/Source/Game/effect/ng/eff67.h"
+#include "sf33rd/Source/Game/effect/ng/eff68.h"
+#include "sf33rd/Source/Game/effect/ng/eff69.h"
+#include "sf33rd/Source/Game/effect/ng/eff71.h"
+#include "sf33rd/Source/Game/effect/ng/eff72.h"
+#include "sf33rd/Source/Game/effect/ng/eff73.h"
+#include "sf33rd/Source/Game/effect/ng/eff74.h"
+#include "sf33rd/Source/Game/effect/ng/eff82.h"
+#include "sf33rd/Source/Game/effect/ng/eff83.h"
+#include "sf33rd/Source/Game/effect/ng/eff85.h"
+#include "sf33rd/Source/Game/effect/ng/eff86.h"
+#include "sf33rd/Source/Game/effect/ng/eff87.h"
+#include "sf33rd/Source/Game/effect/ng/eff88.h"
+#include "sf33rd/Source/Game/effect/ng/eff94.h"
+#include "sf33rd/Source/Game/effect/ng/effc1.h"
+#include "sf33rd/Source/Game/effect/ng/effc2.h"
+#include "sf33rd/Source/Game/effect/ng/effc3.h"
+#include "sf33rd/Source/Game/engine/plpat09.h"
+
+s32 effect_dummy_init() {
+    return -1;
+}
+
+void effect_dummy_move(WORK_Other* /* unused */) {
+    // Do nothing
+}
+
+EffectMoveCallback const effmovejptbl[279] = {
+    (EffectMoveCallback)effect_00_move,
+    effect_01_move,
+    effect_02_move,
+    effect_03_move,
+    effect_04_move,
+    effect_05_move,
+    effect_06_move,
+    effect_07_move,
+    effect_08_move,
+    effect_09_move,
+    effect_10_move,
+    effect_11_move,
+    effect_12_move,
+    effect_13_move,
+    effect_14_move,
+    effect_15_move,
+    effect_16_move,
+    effect_17_move,
+    (EffectMoveCallback)effect_18_move,
+    effect_19_move,
+    effect_20_move,
+    effect_21_move,
+    effect_22_move,
+    (EffectMoveCallback)effect_23_move,
+    effect_24_move,
+    effect_25_move,
+    effect_26_move,
+    effect_27_move,
+    effect_dummy_move,
+    effect_29_move,
+    effect_30_move,
+    effect_31_move,
+    effect_32_move,
+    effect_33_move,
+    effect_34_move,
+    effect_35_move,
+    effect_36_move,
+    effect_37_move,
+    effect_38_move,
+    effect_39_move,
+    effect_40_move,
+    effect_41_move,
+    effect_42_move,
+    effect_43_move,
+    effect_44_move,
+    (EffectMoveCallback)effect_45_move,
+    effect_46_move,
+    effect_47_move,
+    effect_48_move,
+    effect_49_move,
+    effect_50_move,
+    (EffectMoveCallback)effect_51_move,
+    effect_52_move,
+    effect_53_move,
+    effect_54_move,
+    effect_55_move,
+    effect_56_move,
+    effect_57_move,
+    effect_58_move,
+    effect_59_move,
+    effect_60_move,
+    (EffectMoveCallback)effect_61_move,
+    effect_62_move,
+    (EffectMoveCallback)effect_63_move,
+    (EffectMoveCallback)effect_64_move,
+    effect_65_move,
+    effect_66_move,
+    (EffectMoveCallback)effect_67_move,
+    effect_68_move,
+    effect_69_move,
+    effect_70_move,
+    effect_71_move,
+    effect_72_move,
+    effect_73_move,
+    effect_74_move,
+    effect_75_move,
+    effect_76_move,
+    effect_77_move,
+    effect_78_move,
+    effect_79_move,
+    effect_80_move,
+    effect_81_move,
+    effect_82_move,
+    effect_83_move,
+    effect_84_move,
+    effect_85_move,
+    effect_86_move,
+    effect_dummy_move,
+    effect_dummy_move,
+    effect_dummy_move,
+    (EffectMoveCallback)effect_90_move,
+    effect_91_move,
+    effect_92_move,
+    effect_93_move,
+    effect_94_move,
+    effect_95_move,
+    effect_96_move,
+    effect_97_move,
+    effect_98_move,
+    (EffectMoveCallback)effect_99_move,
+    (EffectMoveCallback)effect_A0_move,
+    effect_A1_move,
+    effect_A2_move,
+    effect_A3_move,
+    (EffectMoveCallback)effect_A4_move,
+    effect_A5_move,
+    (EffectMoveCallback)effect_A6_move,
+    effect_A7_move,
+    (EffectMoveCallback)effect_A8_move,
+    effect_A9_move,
+    effect_B0_move,
+    (EffectMoveCallback)effect_B1_move,
+    effect_B2_move,
+    effect_B3_move,
+    effect_B4_move,
+    effect_B5_move,
+    (EffectMoveCallback)effect_B6_move,
+    effect_B7_move,
+    (EffectMoveCallback)effect_B8_move,
+    effect_B9_move,
+    effect_C0_move,
+    effect_C1_move,
+    effect_C2_move,
+    effect_C3_move,
+    (EffectMoveCallback)effect_C4_move,
+    effect_C5_move,
+    effect_C6_move,
+    effect_C7_move,
+    effect_C8_move,
+    effect_C9_move,
+    effect_D0_move,
+    effect_D1_move,
+    effect_dummy_move,
+    effect_D3_move,
+    effect_D4_move,
+    effect_D5_move,
+    effect_D6_move,
+    effect_D7_move,
+    effect_D8_move,
+    effect_D9_move,
+    effect_E0_move,
+    effect_E1_move,
+    effect_E2_move,
+    effect_E3_move,
+    effect_E4_move,
+    effect_E5_move,
+    effect_E6_move,
+    effect_E7_move,
+    effect_E8_move,
+    effect_E9_move,
+    effect_F0_move,
+    effect_dummy_move,
+    effect_F2_move,
+    effect_dummy_move,
+    effect_dummy_move,
+    effect_F5_move,
+    effect_F6_move,
+    effect_dummy_move,
+    effect_F8_move,
+    effect_F9_move,
+    effect_G0_move,
+    effect_dummy_move,
+    effect_dummy_move,
+    effect_G3_move,
+    effect_G4_move,
+    effect_G5_move,
+    effect_G6_move,
+    effect_G7_move,
+    effect_G8_move,
+    effect_G9_move,
+    (EffectMoveCallback)effect_H0_move,
+    effect_H1_move,
+    effect_H2_move,
+    effect_dummy_move,
+    effect_dummy_move,
+    effect_dummy_move,
+    effect_H6_move,
+    effect_dummy_move,
+    effect_dummy_move,
+    (EffectMoveCallback)effect_H9_move,
+    effect_I0_move,
+    effect_dummy_move,
+    effect_dummy_move,
+    effect_I3_move,
+    effect_I4_move,
+    effect_dummy_move,
+    effect_I6_move,
+    effect_I7_move,
+    effect_I8_move,
+    effect_I9_move,
+    effect_J0_move,
+    effect_dummy_move,
+    (EffectMoveCallback)effect_J2_move,
+    effect_dummy_move,
+    effect_J4_move,
+    effect_dummy_move,
+    effect_J6_move,
+    effect_J7_move,
+    effect_J8_move,
+    effect_J9_move,
+    effect_dummy_move,
+    effect_dummy_move,
+    effect_K2_move,
+    effect_K3_move,
+    effect_K4_move,
+    effect_K5_move,
+    effect_K6_move,
+    effect_K7_move,
+    effect_K8_move,
+    effect_K9_move,
+    effect_L0_move,
+    (EffectMoveCallback)effect_L1_move,
+    effect_L2_move,
+    effect_L3_move,
+    effect_L4_move,
+    effect_L5_move,
+    effect_L6_move,
+    effect_L7_move,
+    effect_L8_move,
+    effect_L9_move,
+    effect_M0_move,
+    effect_M1_move,
+    effect_M2_move,
+    effect_M3_move,
+    effect_dummy_move,
+    effect_M5_move,
+    effect_M6_move,
+    effect_M7_move,
+    effect_M8_move,
+
+    // New Generation
+    [EFFECT_NG07_ID] = effect_ng07_move,
+    [EFFECT_NG08_ID] = effect_ng08_move,
+    [EFFECT_NG09_ID] = effect_ng09_move,
+    [EFFECT_NG18_ID] = effect_ng18_move,
+    [EFFECT_NG19_ID] = effect_ng19_move,
+    [EFFECT_NG20_ID] = effect_ng20_move,
+    [EFFECT_NG21_ID] = effect_ng21_move,
+    [EFFECT_NG22_ID] = effect_ng22_move,
+    [EFFECT_NG23_ID] = effect_ng23_move,
+    [EFFECT_NG24_ID] = effect_ng24_move,
+    [EFFECT_NG28_ID] = effect_ng28_move,
+    [EFFECT_NG29_ID] = effect_ng29_move,
+    [EFFECT_NG34_ID] = effect_ng34_move,
+    [EFFECT_NG35_ID] = effect_ng35_move,
+    [EFFECT_NG44_ID] = effect_ng44_move,
+    [EFFECT_NG45_ID] = effect_ng45_move,
+    [EFFECT_NG47_ID] = effect_ng47_move,
+    [EFFECT_NG53_ID] = effect_ng53_move,
+    [EFFECT_NG54_ID] = effect_ng54_move,
+    [EFFECT_NG55_ID] = effect_ng55_move,
+    [EFFECT_NG56_ID] = effect_ng56_move,
+    [EFFECT_NG60_ID] = effect_ng60_move,
+    [EFFECT_NG61_ID] = effect_ng61_move,
+    [EFFECT_NG62_ID] = effect_ng62_move,
+    [EFFECT_NG64_ID] = effect_ng64_move,
+    [EFFECT_NG65_ID] = effect_ng65_move,
+    [EFFECT_NG66_ID] = effect_ng66_move,
+    [EFFECT_NG67_ID] = effect_ng67_move,
+    [EFFECT_NG68_ID] = effect_ng68_move,
+    [EFFECT_NG69_ID] = effect_ng69_move,
+    [EFFECT_NG70_ID] = effect_ng70_move,
+    [EFFECT_NG71_ID] = effect_ng71_move,
+    [EFFECT_NG72_ID] = effect_ng72_move,
+    [EFFECT_NG73_ID] = effect_ng73_move,
+    [EFFECT_NG74_ID] = effect_ng74_move,
+    [EFFECT_NG77_ID] = effect_ng77_move,
+    [EFFECT_NG78_ID] = effect_ng78_move,
+    [EFFECT_NG79_ID] = effect_ng79_move,
+    [EFFECT_NG80_ID] = effect_ng80_move,
+    [EFFECT_NG82_ID] = effect_ng82_move,
+    [EFFECT_NG83_ID] = effect_ng83_move,
+    [EFFECT_NG85_ID] = effect_ng85_move,
+    [EFFECT_NG86_ID] = effect_ng86_move,
+    [EFFECT_NG87_ID] = effect_05_move,
+    [EFFECT_NG88_ID] = effect_06_move,
+    [EFFECT_NG94_ID] = effect_ng94_move,
+    [EFFECT_NGC1_ID] = effect_ngc1_move,
+    [EFFECT_NGC2_ID] = effect_ngc2_move,
+    [EFFECT_NGC3_ID] = effect_ngc3_move,
+    [EFFECT_NG124_ID] = effect_ng124_move,
+};
+
+EffectInitCallback const effinitjptbl[61] = {
+    NULL,
+    effect_03_init,
+    effect_13_init,
+    effect_09_init,
+    (EffectInitCallback)effect_G7_init,
+    (EffectInitCallback)effect_C0_init,
+    (EffectInitCallback)effect_C7_init,
+    (EffectInitCallback)effect_D0_init,
+    (EffectInitCallback)effect_D1_init,
+    (EffectInitCallback)effect_dummy_init,
+    (EffectInitCallback)effect_34_init,
+    (EffectInitCallback)effect_37_init,
+    effect_09_init2,
+    (EffectInitCallback)effect_41_init,
+    effect_D4_init,
+    (EffectInitCallback)set_tenguiwa,
+    (EffectInitCallback)effect_D9_init,
+    (EffectInitCallback)setup_accessories,
+    (EffectInitCallback)setup_after_images,
+    (EffectInitCallback)erase_after_images,
+    (EffectInitCallback)effect_dummy_init,
+    (EffectInitCallback)clear_caution_flag,
+    setup_status_flag,
+    reset_extra_bg_flag,
+    flip_my_rl_flag,
+    (EffectInitCallback)effect_F8_init,
+    (EffectInitCallback)clear_caution_flag,
+    effect_G3_init,
+    effect_G4_init,
+    setup_ase_extra,
+    effect_G6_init,
+    setup_meoshi_hit_flag,
+    exec_char_asxy,
+    (EffectInitCallback)set_caution_flag,
+    setup_my_clear_level,
+    setup_my_bright_level,
+    (EffectInitCallback)effect_dummy_init,
+    (EffectInitCallback)setup_free_program,
+    (EffectInitCallback)setup_bg_quake_x,
+    (EffectInitCallback)setup_bg_quake_y,
+    (EffectInitCallback)effect_47_init,
+    setup_koishi_extra,
+    (EffectInitCallback)effect_77_init,
+    (EffectInitCallback)setup_exdm_ix,
+    (EffectInitCallback)setup_dmv_use_flag,
+    (EffectInitCallback)effect_D5_init,
+    (EffectInitCallback)effect_D6_init,
+    setup_disp_flag,
+    (EffectInitCallback)setup_command_number,
+    (EffectInitCallback)effect_I7_init,
+    (EffectInitCallback)effect_dummy_init,
+    (EffectInitCallback)setup_sa_shadow,
+    (EffectInitCallback)effect_73_init,
+    effect_K8_init,
+    effect_K9_init,
+    (EffectInitCallback)effect_L7_init,
+    effect_M2_init,
+    effect_M8_init,
+    (EffectInitCallback)effect_F0_init,
+
+    // New Generation
+    [EFFINIT_NG09] = effect_ng09_init,
+    [EFFINIT_NG54] = effect_ng54_init,
+};

@@ -1,0 +1,30 @@
+# Python
+
+.venv
+venv
+__pycache__
+
+# macOS
+
+.DS_Store
+
+# IDEs
+
+.vscode
+.cache
+.env
+
+# Project
+
+build
+temp
+third_party
+states
+/rom
+dump
+*.AFS
+/tools/vita/sce_sys_local
+
+# LLMs
+
+.mcp.json
