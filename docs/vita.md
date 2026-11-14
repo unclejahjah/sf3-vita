@@ -89,10 +89,11 @@ The result is `build/vita/3sx.vpk`. SDL3 and vita2d come with VitaSDK. Only mini
 into `third_party/vita`. If the container has no network access, clone
 [minizip-ng](https://github.com/zlib-ng/minizip-ng) yourself and pass its path in `MINIZIP_NG_SRC`.
 
-### LiveArea art from your own game data
+### LiveArea art
 
-The tracked `tools/vita/sce_sys` holds plain placeholder art. To give the bubble and LiveArea the game's own
-title logo on black, cut it from your copy of the game with the desktop build:
+`tools/vita/sce_sys` holds the bubble (`icon0.png`), the LiveArea background and floating start logo, and the splash
+(`pic0.png`). They are the game's title logo on black, cut from the title screen. To make them again from your copy of
+the game with the desktop build:
 
 ```sh
 tools/vita/livearea/capture.sh            # plays the attract mode under Xvfb, saves frames to build/livearea-frames
@@ -101,5 +102,5 @@ python3 -I tools/vita/livearea/compose.py # writes 8-bit indexed PNGs to tools/v
 
 `capture.sh` needs the desktop build (installed with `cmake --install build/application --prefix build/application`),
 Xvfb, ffmpeg, and `SF33RD.AFS` in the desktop data folder. `compose.py` needs Pillow. When
-`tools/vita/sce_sys_local` exists, CMake packs it into the .vpk instead of the placeholders (and adds `pic0.png`).
-The folder is game art: it is in `.gitignore`, so keep it and any .vpk built with it to yourself.
+`tools/vita/sce_sys_local` exists (it is in `.gitignore`), CMake packs it into the .vpk instead of `tools/vita/sce_sys`,
+so you can try new art without touching the tracked files. Copy the files over to `tools/vita/sce_sys` to keep them.
