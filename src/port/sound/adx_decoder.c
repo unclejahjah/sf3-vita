@@ -111,8 +111,11 @@ bool ADXDecoder_Init(ADXDecoder* decoder, SDL_IOStream* file) {
 }
 
 Uint32 ADXDecoder_Decode(ADXDecoder* decoder, Sint16* buffer, Uint32 samples_needed) {
+    const int channel_count = decoder->header.channel_count;
+    const Sint32 coefficient_0 = decoder->coefficients[0];
+    const Sint32 coefficient_1 = decoder->coefficients[1];
+    Uint8 frame[ADX_BLOCK_SIZE * ADX_CHANNELS_MAX];
     Uint32 samples_read = 0;
-    Uint16 scale[ADX_CHANNELS_MAX];
 
     while ((samples_read < samples_needed) && (decoder->sample_index < decoder->header.total_samples)) {
         Uint32 sample_offset = decoder->sample_index % ADX_SAMPLES_PER_BLOCK;
@@ -122,46 +125,48 @@ Uint32 ADXDecoder_Decode(ADXDecoder* decoder, Sint16* buffer, Uint32 samples_nee
 
         const Uint32 frame_start =
             decoder->header.data_offset +
-            decoder->sample_index / ADX_SAMPLES_PER_BLOCK * ADX_BLOCK_SIZE * decoder->header.channel_count;
+            decoder->sample_index / ADX_SAMPLES_PER_BLOCK * ADX_BLOCK_SIZE * channel_count;
+        const size_t frame_size = ADX_BLOCK_SIZE * channel_count;
 
-        for (int i = 0; i < decoder->header.channel_count; i++) {
-            SDL_SeekIO(decoder->file, frame_start + ADX_BLOCK_SIZE * i, SDL_IO_SEEK_SET);
-            SDL_ReadU16BE(decoder->file, &scale[i]);
+        // One read per block. Reading every byte through the stream made decoding cost about
+        // 9% of a frame on the Vita, and 35 ms when a track starts
+        SDL_zeroa(frame);
+
+        if (SDL_SeekIO(decoder->file, frame_start, SDL_IO_SEEK_SET) >= 0) {
+            SDL_ReadIO(decoder->file, frame, frame_size);
         }
 
-        const Uint32 sample_end_offset = sample_offset + samples_to_read;
+        for (int i = 0; i < channel_count; i++) {
+            const Uint8* block = &frame[ADX_BLOCK_SIZE * i];
+            const Sint32 scale = (block[0] << 8) | block[1];
+            Sint32 past_0 = decoder->past_samples[i][0];
+            Sint32 past_1 = decoder->past_samples[i][1];
+            Sint16* out = buffer + i;
 
-        while (sample_offset < sample_end_offset) {
-            for (int i = 0; i < decoder->header.channel_count; i++) {
-                const Sint32 sample_prediction =
-                    (decoder->coefficients[0] * decoder->past_samples[i][0] +
-                     decoder->coefficients[1] * decoder->past_samples[i][1]) >> 13;
-
-                const Uint32 byte_offset =
-                    frame_start + ADX_BLOCK_SIZE * i + 2 + sample_offset / (8 / ADX_SAMPLE_BITDEPTH);
-
-                Uint8 byte;
-                SDL_SeekIO(decoder->file, byte_offset, SDL_IO_SEEK_SET);
-                SDL_ReadU8(decoder->file, &byte);
-                Sint32 sample_error = (sample_offset & 1) ? (byte & 0xF) : (byte >> 4);
+            for (Uint32 offset = sample_offset; offset < sample_offset + samples_to_read; offset++) {
+                const Sint32 sample_prediction = (coefficient_0 * past_0 + coefficient_1 * past_1) >> 13;
+                const Uint8 byte = block[2 + offset / (8 / ADX_SAMPLE_BITDEPTH)];
+                Sint32 sample_error = (offset & 1) ? (byte & 0xF) : (byte >> 4);
 
                 if (sample_error & 0b1000) { // Sign extension
                     sample_error |= ~0b1111;
                 }
 
-                sample_error *= scale[i];
-                Sint32 sample = sample_error + sample_prediction;
-                decoder->past_samples[i][1] = decoder->past_samples[i][0];
-                decoder->past_samples[i][0] = sample;
+                const Sint32 sample = sample_error * scale + sample_prediction;
+                past_1 = past_0;
+                past_0 = sample;
 
-                sample = SDL_clamp(sample, SDL_MIN_SINT16, SDL_MAX_SINT16);
-                *buffer++ = sample;
+                *out = (Sint16)SDL_clamp(sample, SDL_MIN_SINT16, SDL_MAX_SINT16);
+                out += channel_count;
             }
 
-            sample_offset += 1;
-            decoder->sample_index += 1;
-            samples_read += 1;
+            decoder->past_samples[i][0] = past_0;
+            decoder->past_samples[i][1] = past_1;
         }
+
+        buffer += samples_to_read * channel_count;
+        decoder->sample_index += samples_to_read;
+        samples_read += samples_to_read;
     }
 
     return samples_read;
