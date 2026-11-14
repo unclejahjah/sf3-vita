@@ -1,7 +1,7 @@
 name: PS Vita
 
-# Builds 3sx.vpk on every pull request. Pushing a tag named vita-v* (for example vita-v1.0) also
-# publishes a GitHub release with the .vpk attached.
+# Builds 3sx.vpk on every pull request. Pushing a tag named vita-v* (for example vita-v1.0), or running
+# the workflow by hand from the Actions tab with a version, also publishes a GitHub release with the .vpk.
 #
 # The release .vpk uses the LiveArea art in tools/vita/sce_sys. It never contains game data (SF33RD.AFS).
 # tools/vita/sce_sys_local is gitignored local test art and must not be in the checkout.
@@ -11,6 +11,11 @@ on:
         branches: [ "main" ]
     push:
         tags: [ "vita-v*" ]
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Version to release, e.g. 1.0 (creates the tag vita-v<version> on this commit)"
+                required: true
 
 permissions:
     contents: write
@@ -58,7 +63,7 @@ jobs:
 
     release:
         name: Publish release
-        if: startsWith(github.ref, 'refs/tags/vita-v')
+        if: startsWith(github.ref, 'refs/tags/vita-v') || github.event_name == 'workflow_dispatch'
         needs: build
         runs-on: ubuntu-latest
 
@@ -74,7 +79,7 @@ jobs:
           - name: Create GitHub release
             env:
                 GH_TOKEN: ${{ github.token }}
-                TAG_NAME: ${{ github.ref_name }}
+                TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && format('vita-v{0}', inputs.version) || github.ref_name }}
             run: |
                 version="${TAG_NAME#vita-v}"
                 cat > notes.md <<EOF
@@ -96,6 +101,7 @@ jobs:
                 SHA256 of 3sx.vpk: \`$(sha256sum 3sx.vpk | cut -d' ' -f1)\`
                 EOF
                 gh release create "${TAG_NAME}" 3sx.vpk \
+                    --target "${GITHUB_SHA}" \
                     --title "3SX for PS Vita ${version}" \
                     --notes-file notes.md
             shell: bash
