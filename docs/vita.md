@@ -92,7 +92,7 @@ into `third_party/vita`. If the container has no network access, clone
 ### LiveArea art from your own game data
 
 The tracked `tools/vita/sce_sys` holds plain placeholder art. To give the bubble and LiveArea the game's own
-title logo and artwork, cut them from your copy of the game with the desktop build:
+title logo on black, cut it from your copy of the game with the desktop build:
 
 ```sh
 tools/vita/livearea/capture.sh            # plays the attract mode under Xvfb, saves frames to build/livearea-frames
