@@ -175,6 +175,19 @@ Their licences are listed in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
 **Street Fighter III: 3rd Strike** © CAPCOM CO., LTD. 1999, 2004. Street Fighter and Capcom are trademarks of
 CAPCOM CO., LTD. This project is not affiliated with or endorsed by Capcom.
 
+## Support the Vita port
+
+If you enjoy 3SX on your Vita, you can support the port here:
+
+<p align="center">
+  <a href="https://buymeacoffee.com/sirjahjah">
+    <img src="docs/images/buy-me-a-coffee.png" alt="Buy me a coffee" width="250">
+  </a>
+</p>
+
+Please consider supporting the [crowded-street team](https://github.com/crowded-street/3sx) too: the port would not
+exist without their work.
+
 ## Community
 
 Questions about the game code and 3SX in general are welcome on the crowded-street Discord:
