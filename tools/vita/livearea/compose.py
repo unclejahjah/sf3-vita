@@ -14,7 +14,6 @@ Needs Pillow.
 
 import glob
 import os
-import shutil
 import sys
 
 from PIL import Image, ImageDraw, ImageFont
@@ -22,7 +21,6 @@ from PIL import Image, ImageDraw, ImageFont
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 FRAMES_DIR = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO_ROOT, "build", "livearea-frames")
 OUT_DIR = sys.argv[2] if len(sys.argv) > 2 else os.path.join(REPO_ROOT, "tools", "vita", "sce_sys_local")
-TRACKED_SCE_SYS = os.path.join(REPO_ROOT, "tools", "vita", "sce_sys")
 
 
 def near(c, ref, tol=24):
@@ -81,6 +79,50 @@ def add_credit(im, margin=14, size=15):
     return im
 
 
+def floating(art, size):
+    # The logo without the black around it: black connected to the border becomes transparent
+    art = art.resize(size, Image.LANCZOS).convert("RGB")
+    w, h = art.size
+    px = art.load()
+    clear = [[False] * w for _ in range(h)]
+    stack = [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)]
+    while stack:
+        x, y = stack.pop()
+        if 0 <= x < w and 0 <= y < h and not clear[y][x] and max(px[x, y]) < 28:
+            clear[y][x] = True
+            stack += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    pal = art.quantize(colors=255, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
+    data = bytearray(pal.tobytes())
+    for y in range(h):
+        for x in range(w):
+            if clear[y][x]:
+                data[y * w + x] = 255
+    pal.frombytes(bytes(data))
+    palette = pal.getpalette()[:255 * 3] + [0, 0, 0]
+    pal.putpalette(palette)
+    pal.info["transparency"] = 255
+    return pal
+
+
+# The start button is a floating logo (a live item that starts the game) instead of the framed gate,
+# laid out like other homebrew LiveAreas
+LOGO_W, LOGO_H, LOGO_X, LOGO_Y = 420, 247, 210, 95
+TEMPLATE = f"""<?xml version="1.0" encoding="utf-8"?>
+<livearea style="a\x64\x30" format-ver="01.00" content-rev="1">
+  <livearea-background>
+    <image>bg.png</image>
+  </livearea-background>
+
+  <frame id="frame1" multi="o" autoflip="1">
+    <liveitem>
+      <target>psla:eboot</target>
+      <image y="{LOGO_Y}" x="{LOGO_X}" width="{LOGO_W}" height="{LOGO_H}">startup.png</image>
+    </liveitem>
+  </frame>
+</livearea>
+"""
+
+
 def indexed(im):
     # The Vita only shows 8-bit palette PNGs on the LiveArea
     return im.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
@@ -118,8 +160,11 @@ def main():
     # bg.png 840x500: plain black with the 3SX credit; the logo is on the gate only
     save(add_credit(Image.new("RGB", (840, 500))), "livearea/contents/bg.png")
 
-    # startup.png 280x158: the gate (the button that starts the game), the title logo on black
-    save(on_black((280, 158), logo, 220), "livearea/contents/startup.png")
+    # startup.png: the floating title logo that starts the game (see TEMPLATE)
+    startup = os.path.join(OUT_DIR, "livearea", "contents", "startup.png")
+    os.makedirs(os.path.dirname(startup), exist_ok=True)
+    floating(logo, (LOGO_W, LOGO_H)).save(startup, transparency=255, optimize=True)
+    print(f"wrote {startup} {LOGO_W}x{LOGO_H}")
 
     # pic0.png 960x544: shown while the bubble opens; the title screen without the copyright lines
     pic = Image.new("RGB", (960, 544))
@@ -128,8 +173,8 @@ def main():
     pic.paste(t, ((960 - t.width) // 2, 0))
     save(pic, "pic0.png")
 
-    shutil.copy(os.path.join(TRACKED_SCE_SYS, "livearea", "contents", "template.xml"),
-                os.path.join(OUT_DIR, "livearea", "contents", "template.xml"))
+    with open(os.path.join(OUT_DIR, "livearea", "contents", "template.xml"), "w", encoding="utf-8") as f:
+        f.write(TEMPLATE)
     print(f"Done. Rebuild with tools/vita/build-port.sh; CMake now packs {OUT_DIR}.")
 
 
