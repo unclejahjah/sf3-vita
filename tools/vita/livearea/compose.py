@@ -106,7 +106,8 @@ def floating(art, size):
 
 # The start button is a floating logo (a live item that starts the game) instead of the framed gate,
 # laid out like other homebrew LiveAreas
-LOGO_W, LOGO_H, LOGO_X, LOGO_Y = 420, 247, 210, 95
+# On the Vita, x and y move the image from the centre of the frame (x=0 is centred; checked on hardware)
+LOGO_W, LOGO_H, LOGO_X, LOGO_Y = 420, 247, 0, 95
 TEMPLATE = f"""<?xml version="1.0" encoding="utf-8"?>
 <livearea style="a\x64\x30" format-ver="01.00" content-rev="1">
   <livearea-background>
