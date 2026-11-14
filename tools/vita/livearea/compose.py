@@ -53,7 +53,7 @@ def pick(frames, test, what):
     return chosen[1]
 
 
-CREDIT = ["3SX by the crowded-street team", "github.com/crowded-street/3sx"]
+CREDIT = ["3SX by the crowded-street team", "github.com/crowded-street/3sx", "Vita port: github.com/unclejahjah"]
 
 
 def credit_font(size):
