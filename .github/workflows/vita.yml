@@ -1,0 +1,101 @@
+name: PS Vita
+
+# Builds 3sx.vpk on every pull request. Pushing a tag named vita-v* (for example vita-v1.0) also
+# publishes a GitHub release with the .vpk attached.
+#
+# The release .vpk uses the placeholder LiveArea art in tools/vita/sce_sys. It never contains game data
+# or art cut from SF33RD.AFS (tools/vita/sce_sys_local is gitignored and is not in the checkout).
+
+on:
+    pull_request:
+        branches: [ "main" ]
+    push:
+        tags: [ "vita-v*" ]
+
+permissions:
+    contents: write
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v4
+
+          - name: Make sure no game art is packed
+            run: test ! -e tools/vita/sce_sys_local
+
+          - name: Build minizip-ng for Vita
+            run: |
+                set -o pipefail
+                docker run --rm -v "$PWD":/work -w /work vitasdk/vitasdk \
+                    bash tools/vita/build-minizip.sh 2>&1 | tee build-vita-minizip.log
+            shell: bash
+
+          - name: Build 3sx.vpk
+            run: |
+                set -o pipefail
+                docker run --rm -v "$PWD":/work -w /work vitasdk/vitasdk \
+                    bash tools/vita/build-port.sh 2>&1 | tee build-vita.log
+                cp build/vita/3sx.vpk 3sx.vpk
+            shell: bash
+
+          - name: Upload 3sx.vpk
+            uses: actions/upload-artifact@v4
+            with:
+                name: 3sx-vita
+                path: 3sx.vpk
+
+          - name: Upload build logs
+            if: always()
+            uses: actions/upload-artifact@v4
+            with:
+                name: build-log-vita
+                path: |
+                    build-vita-minizip.log
+                    build-vita.log
+
+    release:
+        name: Publish release
+        if: startsWith(github.ref, 'refs/tags/vita-v')
+        needs: build
+        runs-on: ubuntu-latest
+
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v4
+
+          - name: Download 3sx.vpk
+            uses: actions/download-artifact@v4
+            with:
+                name: 3sx-vita
+
+          - name: Create GitHub release
+            env:
+                GH_TOKEN: ${{ github.token }}
+                TAG_NAME: ${{ github.ref_name }}
+            run: |
+                version="${TAG_NAME#vita-v}"
+                cat > notes.md <<EOF
+                Street Fighter III: 3rd Strike running natively on the PS Vita and PS TV, built on
+                [3SX](https://github.com/crowded-street/3sx) by the crowded-street team.
+
+                ## Install
+
+                1. Install \`3sx.vpk\` with VitaShell.
+                2. Copy \`SF33RD.AFS\` from your own PS2 disc (the \`THIRD\` folder) to \`ux0:data/3sx/resources/SF33RD.AFS\`.
+                3. Start **3SX** from the home screen.
+
+                The full guide, including how to get \`SF33RD.AFS\` from your disc and check it, is in the
+                [README](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG_NAME}/README.md#what-you-need).
+
+                > [!IMPORTANT]
+                > No game data is included. You need your own, legally obtained copy of the game.
+
+                SHA256 of 3sx.vpk: \`$(sha256sum 3sx.vpk | cut -d' ' -f1)\`
+                EOF
+                gh release create "${TAG_NAME}" 3sx.vpk \
+                    --title "3SX for PS Vita ${version}" \
+                    --notes-file notes.md
+            shell: bash

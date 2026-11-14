@@ -55,8 +55,8 @@ firmware version.
 
 ## Step 2: install the game
 
-1. Get `3sx.vpk` from the [Releases](https://github.com/unclejahjah/sf3-vita/releases) page once one is published, or
-   build it yourself (see [Building](#building)).
+1. Download `3sx.vpk` from the latest release on the [Releases](https://github.com/unclejahjah/sf3-vita/releases)
+   page, or build it yourself (see [Building](#building)).
 2. Copy `3sx.vpk` to the Vita, for example to `ux0:downloads/`:
    - **FTP:** in VitaShell press SELECT to start the FTP server, then connect to the address it shows (port 1337) with an
      FTP client such as [FileZilla](https://filezilla-project.org) or WinSCP.
