@@ -29,6 +29,13 @@ void AFS_RunServer();
 AFSHandle AFS_Open(size_t file_num);
 void AFS_Read(AFSHandle handle, void* buf);
 void AFS_ReadSync(AFSHandle handle, void* buf);
+
+/// Read a whole file into `buf`, which must hold `AFS_GetSize(file_num)` bytes.
+/// Uses its own file handle, so one thread other than the main thread may call this
+/// while the main thread keeps reading. Not safe to call from two threads at once.
+/// @return `true` if the whole file was read.
+bool AFS_ReadFromWorker(size_t file_num, void* buf);
+
 void AFS_Stop(AFSHandle handle);
 void AFS_Close(AFSHandle handle);
 AFSReadState AFS_GetState(AFSHandle handle);

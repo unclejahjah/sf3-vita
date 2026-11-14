@@ -57,20 +57,23 @@ static int read_errors_logged = 0;
 #define READ_ERRORS_LOGGED_MAX 8
 #define READ_ATTEMPTS_MAX 3
 
-static void vita_reopen() {
-    if (vita_fd >= 0) {
-        sceIoClose(vita_fd);
+/// A second handle for `AFS_ReadFromWorker`, so that the worker and the main thread never share one
+static SceUID vita_worker_fd = -1;
+
+static void vita_reopen(SceUID* fd) {
+    if (*fd >= 0) {
+        sceIoClose(*fd);
     }
 
-    vita_fd = sceIoOpen(afs.file_path, SCE_O_RDONLY, 0);
+    *fd = sceIoOpen(afs.file_path, SCE_O_RDONLY, 0);
 }
 
-static size_t vita_read_at(Sint64 offset, void* buf, size_t size) {
+static size_t vita_read_at(SceUID* fd, Sint64 offset, void* buf, size_t size) {
     size_t total = 0;
     int attempts = 0;
 
     while (total < size) {
-        const int result = sceIoPread(vita_fd, (Uint8*)buf + total, size - total, offset + total);
+        const int result = sceIoPread(*fd, (Uint8*)buf + total, size - total, offset + total);
 
         if (result > 0) {
             total += result;
@@ -96,11 +99,13 @@ static size_t vita_read_at(Sint64 offset, void* buf, size_t size) {
         }
 
         // The handle stops working when the console has been suspended. A new one works again
-        vita_reopen();
+        vita_reopen(fd);
     }
 
     return total;
 }
+#else
+static SDL_IOStream* worker_stream = NULL;
 #endif
 
 static void _log(const char* fmt, ...) {
@@ -260,6 +265,16 @@ void AFS_Finish() {
         sceIoClose(vita_fd);
         vita_fd = -1;
     }
+
+    if (vita_worker_fd >= 0) {
+        sceIoClose(vita_worker_fd);
+        vita_worker_fd = -1;
+    }
+#else
+    if (worker_stream != NULL) {
+        SDL_CloseIO(worker_stream);
+        worker_stream = NULL;
+    }
 #endif
 
     SDL_CloseIO(stream);
@@ -300,7 +315,7 @@ static void read_into_request(ReadRequest* request, size_t max_read) {
 
 #ifdef __vita__
     const double read_start = VitaPerf_Now();
-    const size_t bytes_read = vita_read_at(offset, request->buf + request->bytes_read, bytes_to_read);
+    const size_t bytes_read = vita_read_at(&vita_fd, offset, request->buf + request->bytes_read, bytes_to_read);
     const double read_time = VitaPerf_Now() - read_start;
 
     if (read_time > 2.0) {
@@ -379,6 +394,51 @@ void AFS_ReadSync(AFSHandle handle, void* buf) {
     AFS_Read(handle, buf);
     read_into_request(request, request->bytes_to_read);
     SDL_assert(request->state == AFS_READ_STATE_FINISHED);
+}
+
+bool AFS_ReadFromWorker(size_t file_num, void* buf) {
+    if (file_num >= afs.entry_count) {
+        return false;
+    }
+
+    const Sint64 offset = afs.entries[file_num].offset;
+    const size_t size = afs.entries[file_num].size;
+
+#ifdef __vita__
+    // Read in pieces, so that a read on the main thread never waits behind a long one
+    const size_t piece_size = 32 * 1024;
+    size_t total = 0;
+
+    if (vita_worker_fd < 0) {
+        vita_reopen(&vita_worker_fd);
+    }
+
+    while (total < size) {
+        const size_t wanted = SDL_min(piece_size, size - total);
+
+        if (vita_read_at(&vita_worker_fd, offset + total, (Uint8*)buf + total, wanted) != wanted) {
+            return false;
+        }
+
+        total += wanted;
+    }
+
+    return true;
+#else
+    if (worker_stream == NULL) {
+        worker_stream = SDL_IOFromFile(afs.file_path, "rb");
+    }
+
+    if (worker_stream == NULL) {
+        return false;
+    }
+
+    if (SDL_SeekIO(worker_stream, offset, SDL_IO_SEEK_SET) < 0) {
+        return false;
+    }
+
+    return SDL_ReadIO(worker_stream, buf, size) == size;
+#endif
 }
 
 void AFS_Stop(AFSHandle handle) {
