@@ -39,8 +39,22 @@ A controller can be paired while the game is running.
 
 The game's own Screen Adjust page (Option menu) works on the Vita: the position and size settings move and shrink
 the picture. The page has one more row on the Vita, SCREEN SHAPE, which switches the picture between NORMAL (4:3),
-WIDE and FULL (the whole screen). The choice is saved as `vita-aspect` in the config file. To make room for
-the extra row, the page is written in the game's small menu font.
+WIDE and FULL (the whole screen). The choice is saved as `vita-aspect` in the config file.
+
+Two more rows pick a picture filter:
+
+- FILTER: OFF or one of the post-processing filters of [Emu4VitaPlus](https://github.com/noword/Emu4VitaPlus)
+  (sharp bilinear, anti-aliasing, Scale2x, LCD grids, CRT scanline and mask effects, handheld colour palettes).
+  Saved as `vita-shader`.
+- INTENSITY: how strongly the filter shows, from 0% to 100% in steps of 10. Below 100% the filtered picture is
+  mixed with the plain one. Saved as `vita-shader-intensity`.
+
+The heavier CRT filters (CRT EASYMODE, CRT LOTTES, CRT LOTTES FAST) and SCALE2X PLUS are expected to cost more
+GPU time than a 60 fps frame leaves, and CRT GDV MINI may too. The light ones (SHARP, LCD, ZFAST, the colour
+filters) are cheap. [tools/vita/shaders/README.md](../tools/vita/shaders/README.md) has the estimates, the source
+and the license of every filter.
+
+To make room for the extra rows, the page is written in the game's small menu font.
 
 ## Settings
 
@@ -59,6 +73,16 @@ How the 384x224 picture is fitted to the 960x544 screen. It can also be changed 
 
 - `sharp` (default): the game is drawn at twice its resolution and then scaled smoothly. Crisp pixels without shimmer.
 - `nearest`: the game is drawn straight to the screen without smoothing. A little cheaper for the GPU.
+
+### `vita-shader`
+
+The picture filter, also chosen on the Screen Adjust page: `off` (default) or the file name of a filter in
+`tools/vita/shaders/gxp/` without `_v.gxp` / `_f.gxp`, for example `crt-lottes` or `sharp-bilinear-simple`.
+Filters work with both `vita-filter` settings.
+
+### `vita-shader-intensity`
+
+How strongly the filter shows, `0` to `100` (default `100`).
 
 ### `vita-perf-log`
 

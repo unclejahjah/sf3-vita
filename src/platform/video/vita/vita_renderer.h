@@ -28,6 +28,20 @@ void VitaRenderer_EndFrame();
 void VitaRenderer_SetAspect(VitaAspect aspect);
 VitaAspect VitaRenderer_GetAspect();
 
+/// Post-processing filters (the shaders of Emu4VitaPlus). Filter 0 is off, which is the scaling chosen by
+/// `VitaFilter` alone. Each filter has an id that is its file name in app0:shaders/ and its config value
+int VitaRenderer_GetFilterCount();
+const char* VitaRenderer_GetFilterId(int index);
+/// The index of the filter with this id, or 0 if there is none
+int VitaRenderer_FindFilter(const char* id);
+/// Choose a filter. Returns false if its programs couldn't be loaded, in which case the picture is unfiltered
+bool VitaRenderer_SetFilter(int index);
+int VitaRenderer_GetFilter();
+
+/// How strongly the filter shows, 0 to 100 percent. The rest is the plain picture
+void VitaRenderer_SetFilterIntensity(int percent);
+int VitaRenderer_GetFilterIntensity();
+
 /// Show a plain text screen (for errors that happen before the game can start).
 /// Lines are separated by '\n'.
 void VitaRenderer_ShowMessage(const char* text);

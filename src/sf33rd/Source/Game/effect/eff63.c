@@ -21,14 +21,39 @@ void EFF63_SUDDENLY(WORK_Other_CONN* /* unused */);
 void Disp_63_Sub(WORK_Other_CONN* ewk);
 void Setup_Letter_63(WORK_Other_CONN* ewk, s16 disp_index);
 
-const char* Letter_Data_63[4][21] = { { "-10", "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "0",
+const char* Letter_Data_63[6][21] = { { "-10", "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "0",
                                         "1",   "2",  "3",  "4",  "5",  "6",  "7",  "8",  "9",  "10" },
                                       { "94%", "96%", "98%", "100%", NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                                         NULL,  NULL,  NULL,  NULL,   NULL, NULL, NULL, NULL, NULL, NULL },
                                       { "OFF", "ON", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                                         NULL,  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
                                       { "NORMAL", "WIDE", "FULL", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                                        NULL,     NULL,   NULL,   NULL, NULL, NULL, NULL, NULL, NULL, NULL } };
+                                        NULL,     NULL,   NULL,   NULL, NULL, NULL, NULL, NULL, NULL, NULL },
+                                      // Vita filters, in the order of `shader_infos` in vita_renderer.c
+                                      { "OFF",
+                                        "SHARP BILINEAR",
+                                        "SHARP SIMPLE",
+                                        "ADVANCED AA",
+                                        "SCALE2X PLUS",
+                                        "LCD3X",
+                                        "ZFAST LCD",
+                                        "ZFAST CRT",
+                                        "CRT GDV MINI",
+                                        "CRT EASYMODE",
+                                        "CRT LOTTES FAST",
+                                        "CRT LOTTES",
+                                        "GBA COLOR",
+                                        "GBC COLOR",
+                                        "GBA COLOR LCD",
+                                        "GB DMG",
+                                        "GB POCKET",
+                                        "GB LIGHT",
+                                        NULL,
+                                        NULL,
+                                        NULL },
+                                      // Vita filter intensity
+                                      { "0%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%",
+                                        NULL, NULL,  NULL,  NULL,  NULL,  NULL,  NULL,  NULL,  NULL,  NULL } };
 
 /// Letters of the large and of the small menu font
 #define LARGE_LETTERS 0x7047
@@ -152,6 +177,14 @@ static s32 init_63(u8 dir_old, s16 sync_bg, s16 master_player, s16 letter_type, 
         ewk->wu.dir_step = 1;
         break;
 
+    case 5:
+        ewk->wu.dir_step = compact ? 4 : 2;
+        break;
+
+    case 6:
+        ewk->wu.dir_step = compact ? 5 : 2;
+        break;
+
     default:
         ewk->wu.dir_step = compact ? 3 : 2;
         break;
@@ -199,10 +232,22 @@ void Disp_63_Sub(WORK_Other_CONN* ewk) {
         break;
 
     default:
-        if (ewk->wu.dir_step == 3) {
+        switch (ewk->wu.dir_step) {
+        case 3:
             disp_index = Convert_Buff[2][0][SCREEN_ADJUST_SHAPE_SLOT];
-        } else {
+            break;
+
+        case 4:
+            disp_index = Convert_Buff[2][0][SCREEN_ADJUST_FILTER_SLOT];
+            break;
+
+        case 5:
+            disp_index = Convert_Buff[2][0][SCREEN_ADJUST_INTENSITY_SLOT];
+            break;
+
+        default:
             disp_index = sys_w.screen_mode;
+            break;
         }
 
         break;
