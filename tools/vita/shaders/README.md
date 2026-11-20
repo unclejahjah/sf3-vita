@@ -25,14 +25,9 @@ The filters are separate files that the game reads at runtime; they are not link
 | SHARP BILINEAR | `sharp-bilinear` | Themaister | Public domain |
 | SHARP SIMPLE | `sharp-bilinear-simple` | rsn8887, after Themaister | Public domain |
 | ADVANCED AA | `advanced-aa` | guest(r) | GPL v2 or later (header in libretro/common-shaders) |
-| SCALE2X PLUS | `scale2xplus` | guest(r), Scale2x by Andrea Mazzoleni | GNU GPL |
 | LCD3X | `lcd3x` | Gigaherz | Public domain |
 | ZFAST LCD | `zfast_lcd` | Greg Hogan (SoltanGris42) | GPL v2 or later |
 | ZFAST CRT | `zfast_crt` | Greg Hogan (SoltanGris42) | GPL v2 or later |
-| CRT GDV MINI | `crt-gdv-mini` | guest(r), edited by metallic77 | GPL v2 or later (header in libretro/glsl-shaders) |
-| CRT EASYMODE | `crt-easymode` | EasyMode | GNU GPL |
-| CRT LOTTES FAST | `crt-lottes-fast` | Timothy Lottes, adapted by hunterk | Public domain |
-| CRT LOTTES | `crt-lottes` | Timothy Lottes | Public domain |
 | GBA COLOR | `gba-color` | hunterk | Public domain |
 | GBC COLOR | `gbc-color` | hunterk | Public domain |
 | GBA COLOR LCD | `gba-color+lcd3x` | hunterk, Gigaherz | Public domain |
@@ -41,9 +36,16 @@ The filters are separate files that the game reads at runtime; they are not link
 All of the files were adapted for the Vita by noword as part of Emu4VitaPlus, which is licensed under the GNU GPL
 version 2 (`LICENSE-GPL-2.0.txt`). The GPL-licensed and public-domain filters can be used with 3SX's AGPL-3.0.
 
-Left out: Emu4VitaPlus also has `crt-mattias`, a port of Mattias's Shadertoy "CRT Effect"
-(shadertoy.com/view/lsB3DV). Shadertoy shaders without a license of their own are under CC BY-NC-SA 3.0, which
-forbids commercial use and isn't compatible with the GPL, so it isn't included.
+Left out:
+
+- `scale2xplus`, `crt-gdv-mini`, `crt-easymode`, `crt-lottes-fast` and `crt-lottes` were tried and dropped frames
+  on a Vita (they take 100-200 GPU instructions per pixel). The CRT SCANLINES, CRT APERTURE, CRT SHADOW MASK and
+  CRT SLOT MASK looks of the FILTER row replace them. They are not shaders: `src/platform/video/vita/vita_crt.c`
+  works out the scanline and phosphor mask pattern on the CPU when a setting changes and multiplies it onto the
+  picture with vita2d's plain texture shader, which costs about as much as drawing the picture once more.
+- Emu4VitaPlus also has `crt-mattias`, a port of Mattias's Shadertoy "CRT Effect"
+  (shadertoy.com/view/lsB3DV). Shadertoy shaders without a license of their own are under CC BY-NC-SA 3.0, which
+  forbids commercial use and isn't compatible with the GPL, so it isn't included.
 
 ## Cost
 
@@ -65,8 +67,3 @@ which filter was on when a frame was slow.
 | GB DMG / POCKET / LIGHT | 43 | 4.8 | 6.3 | likely |
 | ADVANCED AA | 52 | 5.8 | 7.6 | likely |
 | GBA COLOR LCD | 52 | 5.8 | 7.6 | likely |
-| CRT GDV MINI | 96 | 10.7 | 14.1 | doubtful |
-| CRT EASYMODE | 132 | 14.7 | 19.4 | not expected to hold |
-| SCALE2X PLUS | 139 | 15.4 | 20.4 | not expected to hold |
-| CRT LOTTES FAST | 174 | 19.3 | 25.6 | not expected to hold |
-| CRT LOTTES | 217 | 24.1 | 31.9 | not expected to hold |

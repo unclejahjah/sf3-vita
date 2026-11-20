@@ -20,6 +20,7 @@
 #if CRS_VIDEO_DRIVER_VITA
 
 #include "platform/video/vita/vita_renderer.h"
+#include "platform/video/vita/vita_crt.h"
 #include "platform/video/vita/vita_shader.h"
 
 #include "common.h"
@@ -124,32 +125,40 @@ static vita2d_texture* canvas = NULL;
 /// Draw straight to the screen when no filter is chosen (the "nearest" setting)
 static bool draw_direct = false;
 
+typedef enum VitaFilterKind {
+    FILTER_OFF,
+    FILTER_SHADER, ///< A shader from Emu4VitaPlus, in app0:shaders/
+    FILTER_CRT,    ///< A pattern from vita_crt.c
+} VitaFilterKind;
+
 typedef struct VitaShaderInfo {
-    const char* id; ///< File name in app0:shaders/ and value of the config setting
-    bool linear;    ///< Sample the picture with bilinear filtering, as the filter's RetroArch preset does
+    const char* id; ///< Value of the config setting, and for a shader its file name in app0:shaders/
+    VitaFilterKind kind;
+    bool linear;         ///< Shader: sample the picture with bilinear filtering, as its RetroArch preset does
+    VitaCrtLook crt_look; ///< CRT: which pattern
 } VitaShaderInfo;
 
-/// The filters from Emu4VitaPlus, in the order of the FILTER row of the Screen Adjust page
-/// (`Letter_Data_63` in eff63.c holds the names shown there)
+/// The filters, in the order of the FILTER row of the Screen Adjust page (`Letter_Data_63` in eff63.c holds the
+/// names shown there). Emu4VitaPlus's scale2xplus, crt-gdv-mini, crt-easymode, crt-lottes-fast and crt-lottes
+/// dropped frames on hardware, so the CRT looks come from vita_crt.c instead
 static const VitaShaderInfo shader_infos[] = {
-    { "off", false },
-    { "sharp-bilinear", true },
-    { "sharp-bilinear-simple", true },
-    { "advanced-aa", false },
-    { "scale2xplus", false },
-    { "lcd3x", false },
-    { "zfast_lcd", true },
-    { "zfast_crt", true },
-    { "crt-gdv-mini", true },
-    { "crt-easymode", false },
-    { "crt-lottes-fast", true },
-    { "crt-lottes", false },
-    { "gba-color", false },
-    { "gbc-color", false },
-    { "gba-color+lcd3x", false },
-    { "gb-palette-dmg", false },
-    { "gb-palette-pocket", false },
-    { "gb-palette-light", false },
+    { "off", FILTER_OFF },
+    { "sharp-bilinear", FILTER_SHADER, true },
+    { "sharp-bilinear-simple", FILTER_SHADER, true },
+    { "advanced-aa", FILTER_SHADER, false },
+    { "lcd3x", FILTER_SHADER, false },
+    { "zfast_lcd", FILTER_SHADER, true },
+    { "zfast_crt", FILTER_SHADER, true },
+    { "crt-scanlines", FILTER_CRT, false, VITA_CRT_SCANLINES },
+    { "crt-aperture", FILTER_CRT, false, VITA_CRT_APERTURE },
+    { "crt-shadow-mask", FILTER_CRT, false, VITA_CRT_SHADOW_MASK },
+    { "crt-slot-mask", FILTER_CRT, false, VITA_CRT_SLOT_MASK },
+    { "gba-color", FILTER_SHADER, false },
+    { "gbc-color", FILTER_SHADER, false },
+    { "gba-color+lcd3x", FILTER_SHADER, false },
+    { "gb-palette-dmg", FILTER_SHADER, false },
+    { "gb-palette-pocket", FILTER_SHADER, false },
+    { "gb-palette-light", FILTER_SHADER, false },
 };
 
 static int shader_index = 0;
@@ -657,6 +666,8 @@ void VitaRenderer_Shutdown() {
         shader_loaded = false;
     }
 
+    VitaCrt_Shutdown();
+
     if (canvas != NULL) {
         vita2d_free_texture(canvas);
         canvas = NULL;
@@ -677,8 +688,9 @@ void VitaRenderer_RenderFrame() {
     vita2d_pool_reset();
 
     const bool filtered = shader_loaded && shader_intensity > 0;
+    const bool crt = shader_infos[shader_index].kind == FILTER_CRT && shader_intensity > 0;
 
-    if (canvas != NULL && (filtered || !draw_direct)) {
+    if (canvas != NULL && (filtered || crt || !draw_direct)) {
         set_transform_for_canvas();
         vita2d_start_drawing_advanced(canvas, 0);
         vita2d_clear_screen();
@@ -707,7 +719,14 @@ void VitaRenderer_RenderFrame() {
         if (filtered) {
             // The canvas holds the picture at twice the game's resolution. The filters are told it is
             // 384x224 so that scanlines, masks and the like line up with the game's pixels
-            VitaShader_Draw(&shader, &shader_texture, GAME_WIDTH, GAME_HEIGHT, view.x, view.y, view.w, view.h);
+            VitaShader_Draw(
+                &shader, &shader_texture, GAME_WIDTH, GAME_HEIGHT, 1.0f, 1.0f, view.x, view.y, view.w, view.h
+            );
+        }
+
+        if (crt) {
+            // The CRT looks apply the intensity themselves
+            VitaCrt_Draw(shader_infos[shader_index].crt_look, shader_intensity, view.x, view.y, view.w, view.h);
         }
 
         vita2d_end_drawing();
@@ -766,8 +785,16 @@ bool VitaRenderer_SetFilter(int index) {
 
     shader_index = index;
 
-    if (index == 0 || canvas == NULL) {
-        return index == 0;
+    if (index == 0) {
+        return true;
+    }
+
+    if (canvas == NULL) {
+        return false;
+    }
+
+    if (shader_infos[index].kind == FILTER_CRT) {
+        return VitaCrt_Init();
     }
 
     if (!VitaShader_Load(&shader, shader_infos[index].id)) {

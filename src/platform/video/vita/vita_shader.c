@@ -64,20 +64,47 @@ static void* read_program(const char* name, const char* suffix) {
     return data;
 }
 
+/// Mix with the unfiltered picture by the destination alpha, which holds 1 - intensity
+static const SceGxmBlendInfo blend_by_dst_alpha = {
+    .colorMask = SCE_GXM_COLOR_MASK_ALL,
+    .colorFunc = SCE_GXM_BLEND_FUNC_ADD,
+    .alphaFunc = SCE_GXM_BLEND_FUNC_ADD,
+    .colorSrc = SCE_GXM_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
+    .colorDst = SCE_GXM_BLEND_FACTOR_DST_ALPHA,
+    .alphaSrc = SCE_GXM_BLEND_FACTOR_ZERO,
+    .alphaDst = SCE_GXM_BLEND_FACTOR_ONE,
+};
+
 bool VitaShader_Load(VitaShader* shader, const char* name) {
-    SceGxmShaderPatcher* patcher = vita2d_get_shader_patcher();
-    SDL_zerop(shader);
+    void* vertex_gxp = read_program(name, "_v.gxp");
+    void* fragment_gxp = read_program(name, "_f.gxp");
 
-    shader->vertex_gxp = read_program(name, "_v.gxp");
-    shader->fragment_gxp = read_program(name, "_f.gxp");
-
-    if (shader->vertex_gxp == NULL || shader->fragment_gxp == NULL) {
-        VitaShader_Free(shader);
+    if (vertex_gxp == NULL || fragment_gxp == NULL) {
+        free(vertex_gxp);
+        free(fragment_gxp);
+        SDL_zerop(shader);
         return false;
     }
 
-    const SceGxmProgram* vertex_gxp = shader->vertex_gxp;
-    const SceGxmProgram* fragment_gxp = shader->fragment_gxp;
+    if (!VitaShader_LoadPrograms(shader, name, vertex_gxp, fragment_gxp, &blend_by_dst_alpha)) {
+        free(vertex_gxp);
+        free(fragment_gxp);
+        return false;
+    }
+
+    // The patcher keeps pointing at the programs, so they live as long as the shader
+    shader->vertex_gxp = vertex_gxp;
+    shader->fragment_gxp = fragment_gxp;
+    return true;
+}
+
+bool VitaShader_LoadPrograms(
+    VitaShader* shader, const char* name, const SceGxmProgram* vertex_gxp, const SceGxmProgram* fragment_gxp,
+    const SceGxmBlendInfo* blend
+) {
+    SceGxmShaderPatcher* patcher = vita2d_get_shader_patcher();
+    SDL_zerop(shader);
+    shader->fragment_program_gxp = fragment_gxp;
 
     if (sceGxmShaderPatcherRegisterProgram(patcher, vertex_gxp, &shader->vertex_id) < 0 ||
         sceGxmShaderPatcherRegisterProgram(patcher, fragment_gxp, &shader->fragment_id) < 0) {
@@ -112,17 +139,6 @@ bool VitaShader_Load(VitaShader* shader, const char* name) {
     const SceGxmVertexStream stream = { .stride = sizeof(vita2d_texture_vertex),
                                         .indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT };
 
-    // Mix with the unfiltered picture by the destination alpha, which holds 1 - intensity
-    static const SceGxmBlendInfo blend = {
-        .colorMask = SCE_GXM_COLOR_MASK_ALL,
-        .colorFunc = SCE_GXM_BLEND_FUNC_ADD,
-        .alphaFunc = SCE_GXM_BLEND_FUNC_ADD,
-        .colorSrc = SCE_GXM_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
-        .colorDst = SCE_GXM_BLEND_FACTOR_DST_ALPHA,
-        .alphaSrc = SCE_GXM_BLEND_FACTOR_ZERO,
-        .alphaDst = SCE_GXM_BLEND_FACTOR_ONE,
-    };
-
     if (sceGxmShaderPatcherCreateVertexProgram(
             patcher, shader->vertex_id, attributes, 2, &stream, 1, &shader->vertex_program
         ) < 0 ||
@@ -131,7 +147,7 @@ bool VitaShader_Load(VitaShader* shader, const char* name) {
             shader->fragment_id,
             SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
             SCE_GXM_MULTISAMPLE_NONE,
-            &blend,
+            blend,
             vertex_gxp,
             &shader->fragment_program
         ) < 0) {
@@ -180,8 +196,8 @@ static void set_size(void* buffer, const SceGxmProgramParameter* parameter, cons
 }
 
 void VitaShader_Draw(
-    const VitaShader* shader, const SceGxmTexture* texture, float source_w, float source_h, float x, float y, float w,
-    float h
+    const VitaShader* shader, const SceGxmTexture* texture, float source_w, float source_h, float u, float v, float x,
+    float y, float w, float h
 ) {
     SceGxmContext* context = vita2d_get_context();
     const float texture_size[2] = { source_w, source_h };
@@ -194,9 +210,9 @@ void VitaShader_Draw(
     }
 
     vertices[0] = (vita2d_texture_vertex) { x, y, 0.5f, 0.0f, 0.0f };
-    vertices[1] = (vita2d_texture_vertex) { x + w, y, 0.5f, 1.0f, 0.0f };
-    vertices[2] = (vita2d_texture_vertex) { x, y + h, 0.5f, 0.0f, 1.0f };
-    vertices[3] = (vita2d_texture_vertex) { x + w, y + h, 0.5f, 1.0f, 1.0f };
+    vertices[1] = (vita2d_texture_vertex) { x + w, y, 0.5f, u, 0.0f };
+    vertices[2] = (vita2d_texture_vertex) { x, y + h, 0.5f, 0.0f, v };
+    vertices[3] = (vita2d_texture_vertex) { x + w, y + h, 0.5f, u, v };
 
     sceGxmSetVertexProgram(context, shader->vertex_program);
     sceGxmSetFragmentProgram(context, shader->fragment_program);
@@ -213,7 +229,7 @@ void VitaShader_Draw(
     }
 
     // Programs without fragment uniforms have no buffer to reserve
-    if (sceGxmProgramGetDefaultUniformBufferSize(shader->fragment_gxp) > 0) {
+    if (sceGxmProgramGetDefaultUniformBufferSize(shader->fragment_program_gxp) > 0) {
         void* fragment_uniforms = NULL;
         sceGxmReserveFragmentDefaultUniformBuffer(context, &fragment_uniforms);
 

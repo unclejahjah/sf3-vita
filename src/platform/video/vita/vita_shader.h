@@ -10,8 +10,9 @@
 /// (`aPosition`, `aTexcoord`, `wvp` and the `IN.texture_size` / `IN.video_size` / `IN.output_size` uniforms).
 /// The programs are the ones Emu4VitaPlus ships, loaded from `app0:shaders/<name>_v.gxp` and `<name>_f.gxp`.
 typedef struct VitaShader {
-    void* vertex_gxp;
-    void* fragment_gxp;
+    void* vertex_gxp;   ///< Program read from a file, NULL for a built-in one
+    void* fragment_gxp; ///< Program read from a file, NULL for a built-in one
+    const SceGxmProgram* fragment_program_gxp;
     SceGxmShaderPatcherId vertex_id;
     SceGxmShaderPatcherId fragment_id;
     SceGxmVertexProgram* vertex_program;
@@ -29,14 +30,21 @@ typedef struct VitaShader {
 /// result = filter * (1 - dst.a) + dst * dst.a, which is how the filter intensity is applied.
 bool VitaShader_Load(VitaShader* shader, const char* name);
 
+/// Set up a filter from programs that are already in memory and stay there, with its own blending
+bool VitaShader_LoadPrograms(
+    VitaShader* shader, const char* name, const SceGxmProgram* vertex_gxp, const SceGxmProgram* fragment_gxp,
+    const SceGxmBlendInfo* blend
+);
+
 /// Free a filter. The GPU must be done with it (`vita2d_wait_rendering_done`)
 void VitaShader_Free(VitaShader* shader);
 
 /// Draw `texture` through the filter into the rectangle x, y, w, h (vita2d's 960x544 units).
-/// `source_w` x `source_h` is the resolution the filter should treat the texture as having
+/// `source_w` x `source_h` is the resolution the filter should treat the texture as having, and `u` x `v` is the
+/// part of the texture that is drawn (1 x 1 for all of it)
 void VitaShader_Draw(
-    const VitaShader* shader, const SceGxmTexture* texture, float source_w, float source_h, float x, float y, float w,
-    float h
+    const VitaShader* shader, const SceGxmTexture* texture, float source_w, float source_h, float u, float v, float x,
+    float y, float w, float h
 );
 
 #endif
