@@ -150,6 +150,8 @@ static const VitaShaderInfo shader_infos[] = {
     { "zfast_lcd", FILTER_SHADER, true },
     { "zfast_crt", FILTER_SHADER, true },
     { "crt-scanlines", FILTER_CRT, false, VITA_CRT_SCANLINES },
+    { "crt-scan-soft", FILTER_CRT, false, VITA_CRT_SCAN_SOFT },
+    { "crt-scan-hard", FILTER_CRT, false, VITA_CRT_SCAN_HARD },
     { "crt-aperture", FILTER_CRT, false, VITA_CRT_APERTURE },
     { "crt-shadow-mask", FILTER_CRT, false, VITA_CRT_SHADOW_MASK },
     { "crt-slot-mask", FILTER_CRT, false, VITA_CRT_SLOT_MASK },

@@ -42,6 +42,8 @@ static const SceGxmBlendInfo modulate_2x = {
 
 /// How dark the gap between two scanlines gets (0 = no scanlines, 1 = black)
 #define SCANLINE_DEPTH_ALONE 0.5f
+#define SCANLINE_DEPTH_SOFT 0.3f
+#define SCANLINE_DEPTH_HARD 0.75f
 #define SCANLINE_DEPTH_WITH_MASK 0.35f
 
 /// Phosphor mask: the lit colour and the two others
@@ -73,6 +75,8 @@ static void mask_at(VitaCrtLook look, int x, int y, float rgb[3]) {
 
     switch (look) {
     case VITA_CRT_SCANLINES:
+    case VITA_CRT_SCAN_SOFT:
+    case VITA_CRT_SCAN_HARD:
         rgb[0] = rgb[1] = rgb[2] = 1.0f;
         break;
 
@@ -114,7 +118,25 @@ static Uint8 encode(float multiplier) {
 }
 
 static void build_pattern(VitaCrtLook look, int intensity, int w, int h) {
-    const float depth = (look == VITA_CRT_SCANLINES) ? SCANLINE_DEPTH_ALONE : SCANLINE_DEPTH_WITH_MASK;
+    float depth = SCANLINE_DEPTH_WITH_MASK;
+
+    switch (look) {
+    case VITA_CRT_SCANLINES:
+        depth = SCANLINE_DEPTH_ALONE;
+        break;
+
+    case VITA_CRT_SCAN_SOFT:
+        depth = SCANLINE_DEPTH_SOFT;
+        break;
+
+    case VITA_CRT_SCAN_HARD:
+        depth = SCANLINE_DEPTH_HARD;
+        break;
+
+    default:
+        break;
+    }
+
     const float strength = intensity / 100.0f;
     float row_sum = 0.0f;
 
@@ -122,7 +144,14 @@ static void build_pattern(VitaCrtLook look, int intensity, int w, int h) {
     for (int y = 0; y < h; y++) {
         const float line_pos = (y + 0.5f) * GAME_HEIGHT / h;
         const float f = line_pos - floorf(line_pos);
-        row_light[y] = 1.0f - depth * (0.5f + 0.5f * cosf(2.0f * SDL_PI_F * f));
+        float gap = 0.5f + 0.5f * cosf(2.0f * SDL_PI_F * f);
+
+        if (look == VITA_CRT_SCAN_HARD) {
+            // Widen the dark part so the gaps read as solid lines
+            gap = sqrtf(gap);
+        }
+
+        row_light[y] = 1.0f - depth * gap;
         row_sum += row_light[y];
     }
 

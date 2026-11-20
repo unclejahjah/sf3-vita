@@ -39,8 +39,8 @@ version 2 (`LICENSE-GPL-2.0.txt`). The GPL-licensed and public-domain filters ca
 Left out:
 
 - `scale2xplus`, `crt-gdv-mini`, `crt-easymode`, `crt-lottes-fast` and `crt-lottes` were tried and dropped frames
-  on a Vita (they take 100-200 GPU instructions per pixel). The CRT SCANLINES, CRT APERTURE, CRT SHADOW MASK and
-  CRT SLOT MASK looks of the FILTER row replace them. They are not shaders: `src/platform/video/vita/vita_crt.c`
+  on a Vita (they take 100-200 GPU instructions per pixel). The CRT SCANLINES, CRT SCAN SOFT, CRT SCAN HARD, CRT APERTURE,
+  CRT SHADOW MASK and CRT SLOT MASK looks of the FILTER row replace them. They are not shaders: `src/platform/video/vita/vita_crt.c`
   works out the scanline and phosphor mask pattern on the CPU when a setting changes and multiplies it onto the
   picture with vita2d's plain texture shader, which costs about as much as drawing the picture once more.
 - Emu4VitaPlus also has `crt-mattias`, a port of Mattias's Shadertoy "CRT Effect"

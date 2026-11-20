@@ -38,6 +38,8 @@ const char* Letter_Data_63[6][21] = { { "-10", "-9", "-8", "-7", "-6", "-5", "-4
                                         "ZFAST LCD",
                                         "ZFAST CRT",
                                         "CRT SCANLINES",
+                                        "CRT SCAN SOFT",
+                                        "CRT SCAN HARD",
                                         "CRT APERTURE",
                                         "CRT SHADOW MASK",
                                         "CRT SLOT MASK",
@@ -47,8 +49,6 @@ const char* Letter_Data_63[6][21] = { { "-10", "-9", "-8", "-7", "-6", "-5", "-4
                                         "GB DMG",
                                         "GB POCKET",
                                         "GB LIGHT",
-                                        NULL,
-                                        NULL,
                                         NULL,
                                         NULL },
                                       // Vita filter intensity

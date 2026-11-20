@@ -8,6 +8,8 @@
 /// picture changes, so a frame costs one textured quad.
 typedef enum VitaCrtLook {
     VITA_CRT_SCANLINES,   ///< Scanlines only
+    VITA_CRT_SCAN_SOFT,   ///< Faint, smooth scanlines
+    VITA_CRT_SCAN_HARD,   ///< Thick dark gaps between the lines, like a broadcast monitor
     VITA_CRT_APERTURE,    ///< Scanlines + aperture grille (vertical RGB stripes, like a Trinitron)
     VITA_CRT_SHADOW_MASK, ///< Scanlines + staggered RGB triads
     VITA_CRT_SLOT_MASK,   ///< Scanlines + RGB stripes broken into slots
