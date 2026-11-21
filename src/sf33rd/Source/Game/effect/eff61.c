@@ -17,7 +17,7 @@ void EFF61_SLIDE_IN(WORK_Other_CONN* ewk);
 void EFF61_SLIDE_OUT(WORK_Other_CONN* /* unused */);
 void EFF61_SUDDENLY(WORK_Other_CONN* ewk);
 
-const char* Menu_Letter_Data[75] = { "ARCADE",
+const char* Menu_Letter_Data[77] = { "ARCADE",
                                      "VERSUS",
                                      "TRAINING",
                                      "SYSTEM DIRECTION",
@@ -88,12 +88,14 @@ const char* Menu_Letter_Data[75] = { "ARCADE",
                                      "EXIT",
                                      "FIND MATCH",
                                      "EXIT",
-                                     // Screen Adjust with the picture shape row
+                                     // The Vita's Screen Adjust page (picture shape and filter rows)
                                      "X POSITION^^^^^",
                                      "Y POSITION^^^^^",
                                      "X RANGE^^^^^^^^",
                                      "Y RANGE^^^^^^^^",
                                      "SCREEN SHAPE^^^",
+                                     "FILTER^^^^^^^^^",
+                                     "INTENSITY^^^^^^",
                                      "LANGUAGE^^^^^^^",
                                      "DEFAULT SETTING",
                                      "EXIT" };

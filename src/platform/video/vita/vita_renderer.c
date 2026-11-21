@@ -20,6 +20,8 @@
 #if CRS_VIDEO_DRIVER_VITA
 
 #include "platform/video/vita/vita_renderer.h"
+#include "platform/video/vita/vita_crt.h"
+#include "platform/video/vita/vita_shader.h"
 
 #include "common.h"
 #include "port/utils.h"
@@ -68,6 +70,9 @@
 
 #define Z_DRAW 0.5f
 #define COLOR_BLACK 0xFF000000u
+/// The screen is cleared to black with zero alpha. The alpha channel of the screen is never shown, and the
+/// filter pass uses it to mix the filtered and the plain picture
+#define COLOR_CLEAR 0x00000000u
 #define COLOR_WHITE 0xFFFFFFFFu
 
 typedef struct VitaQuad {
@@ -117,6 +122,46 @@ static Uint16 current_texture = 0;
 static Uint16 current_palette = 0;
 
 static vita2d_texture* canvas = NULL;
+/// Draw straight to the screen when no filter is chosen (the "nearest" setting)
+static bool draw_direct = false;
+
+typedef enum VitaFilterKind {
+    FILTER_OFF,
+    FILTER_SHADER, ///< A shader from Emu4VitaPlus, in app0:shaders/
+    FILTER_CRT,    ///< A pattern from vita_crt.c
+} VitaFilterKind;
+
+typedef struct VitaShaderInfo {
+    const char* id; ///< Value of the config setting, and for a shader its file name in app0:shaders/
+    VitaFilterKind kind;
+    bool linear;         ///< Shader: sample the picture with bilinear filtering, as its RetroArch preset does
+    VitaCrtLook crt_look; ///< CRT: which pattern
+} VitaShaderInfo;
+
+/// The filters, in the order of the FILTER row of the Screen Adjust page (`Letter_Data_63` in eff63.c holds the
+/// names shown there). Emu4VitaPlus's scale2xplus, crt-gdv-mini, crt-easymode, crt-lottes-fast and crt-lottes
+/// dropped frames on hardware, so the CRT looks come from vita_crt.c instead. Its advanced-aa and handheld colour
+/// filters were left out by choice
+static const VitaShaderInfo shader_infos[] = {
+    { "off", FILTER_OFF },
+    { "sharp-bilinear", FILTER_SHADER, true },
+    { "sharp-bilinear-simple", FILTER_SHADER, true },
+    { "lcd3x", FILTER_SHADER, false },
+    { "zfast_lcd", FILTER_SHADER, true },
+    { "zfast_crt", FILTER_SHADER, true },
+    { "crt-scanlines", FILTER_CRT, false, VITA_CRT_SCANLINES },
+    { "crt-scan-soft", FILTER_CRT, false, VITA_CRT_SCAN_SOFT },
+    { "crt-scan-hard", FILTER_CRT, false, VITA_CRT_SCAN_HARD },
+    { "crt-aperture", FILTER_CRT, false, VITA_CRT_APERTURE },
+    { "crt-shadow-mask", FILTER_CRT, false, VITA_CRT_SHADOW_MASK },
+    { "crt-slot-mask", FILTER_CRT, false, VITA_CRT_SLOT_MASK },
+};
+
+static int shader_index = 0;
+static int shader_intensity = 100;
+static bool shader_loaded = false;
+static VitaShader shader;
+static SceGxmTexture shader_texture;
 static vita2d_pgf* message_font = NULL;
 
 static VitaAspect current_aspect = VITA_ASPECT_4_3;
@@ -564,7 +609,7 @@ bool VitaRenderer_Init(VitaAspect aspect, VitaFilter filter) {
     }
 
     vita2d_init_advanced(POOL_SIZE);
-    vita2d_set_clear_color(COLOR_BLACK);
+    vita2d_set_clear_color(COLOR_CLEAR);
     vita2d_set_vblank_wait(1);
 
     arena = gpu_alloc(ARENA_SIZE, "3sx_textures");
@@ -582,16 +627,17 @@ bool VitaRenderer_Init(VitaAspect aspect, VitaFilter filter) {
     base_view = view_for_aspect(aspect);
     view = base_view;
 
-    if (filter == VITA_FILTER_SHARP) {
-        // The alpha channel of the canvas is junk after blending, so read it back as opaque
-        canvas =
-            vita2d_create_empty_texture_rendertarget(CANVAS_WIDTH, CANVAS_HEIGHT, SCE_GXM_TEXTURE_FORMAT_X8U8U8U8_1BGR);
+    // The canvas is also where the filters read the picture from, so it exists even for "nearest"
+    // The alpha channel of the canvas is junk after blending, so read it back as opaque
+    canvas = vita2d_create_empty_texture_rendertarget(CANVAS_WIDTH, CANVAS_HEIGHT, SCE_GXM_TEXTURE_FORMAT_X8U8U8U8_1BGR);
+    draw_direct = (filter == VITA_FILTER_NEAREST);
 
-        if (canvas != NULL) {
-            vita2d_texture_set_filters(canvas, SCE_GXM_TEXTURE_FILTER_LINEAR, SCE_GXM_TEXTURE_FILTER_LINEAR);
-        } else {
-            SDL_Log("Couldn't create the offscreen canvas, drawing straight to the screen");
-        }
+    if (canvas != NULL) {
+        const SceGxmTextureFilter scale_filter =
+            draw_direct ? SCE_GXM_TEXTURE_FILTER_POINT : SCE_GXM_TEXTURE_FILTER_LINEAR;
+        vita2d_texture_set_filters(canvas, scale_filter, scale_filter);
+    } else {
+        SDL_Log("Couldn't create the offscreen canvas, drawing straight to the screen");
     }
 
     initialized = true;
@@ -610,6 +656,13 @@ void VitaRenderer_Shutdown() {
         vita2d_free_pgf(message_font);
         message_font = NULL;
     }
+
+    if (shader_loaded) {
+        VitaShader_Free(&shader);
+        shader_loaded = false;
+    }
+
+    VitaCrt_Shutdown();
 
     if (canvas != NULL) {
         vita2d_free_texture(canvas);
@@ -630,7 +683,10 @@ void VitaRenderer_RenderFrame() {
     sort_quads();
     vita2d_pool_reset();
 
-    if (canvas != NULL) {
+    const bool filtered = shader_loaded && shader_intensity > 0;
+    const bool crt = shader_infos[shader_index].kind == FILTER_CRT && shader_intensity > 0;
+
+    if (canvas != NULL && (filtered || crt || !draw_direct)) {
         set_transform_for_canvas();
         vita2d_start_drawing_advanced(canvas, 0);
         vita2d_clear_screen();
@@ -639,12 +695,36 @@ void VitaRenderer_RenderFrame() {
 
         vita2d_start_drawing_advanced(NULL, 0);
         vita2d_clear_screen();
-        // Adding to the black screen copies the canvas whatever its alpha channel holds
-        vita2d_set_blend_mode_add(1);
-        vita2d_draw_texture_scale(
-            canvas, view.x, view.y, (float)view.w / CANVAS_WIDTH, (float)view.h / CANVAS_HEIGHT
-        );
-        vita2d_set_blend_mode_add(0);
+
+        if (!filtered || shader_intensity < 100) {
+            // The plain picture. Adding to the cleared screen copies the canvas whatever its alpha channel
+            // holds, and leaves 1 - intensity in the screen's alpha channel for the filter pass
+            const Uint32 alpha = filtered ? (Uint32)(255 * (100 - shader_intensity) / 100) : 255;
+            vita2d_set_blend_mode_add(1);
+            vita2d_draw_texture_tint_scale(
+                canvas,
+                view.x,
+                view.y,
+                (float)view.w / CANVAS_WIDTH,
+                (float)view.h / CANVAS_HEIGHT,
+                RGBA8(255, 255, 255, alpha)
+            );
+            vita2d_set_blend_mode_add(0);
+        }
+
+        if (filtered) {
+            // The canvas holds the picture at twice the game's resolution. The filters are told it is
+            // 384x224 so that scanlines, masks and the like line up with the game's pixels
+            VitaShader_Draw(
+                &shader, &shader_texture, GAME_WIDTH, GAME_HEIGHT, 1.0f, 1.0f, view.x, view.y, view.w, view.h
+            );
+        }
+
+        if (crt) {
+            // The CRT looks apply the intensity themselves
+            VitaCrt_Draw(shader_infos[shader_index].crt_look, shader_intensity, view.x, view.y, view.w, view.h);
+        }
+
         vita2d_end_drawing();
     } else {
         set_transform_for_screen();
@@ -655,6 +735,87 @@ void VitaRenderer_RenderFrame() {
         draw_black_bars();
         vita2d_end_drawing();
     }
+}
+
+int VitaRenderer_GetFilterCount() {
+    return SDL_arraysize(shader_infos);
+}
+
+const char* VitaRenderer_GetFilterId(int index) {
+    if (index < 0 || index >= SDL_arraysize(shader_infos)) {
+        return shader_infos[0].id;
+    }
+
+    return shader_infos[index].id;
+}
+
+int VitaRenderer_FindFilter(const char* id) {
+    if (id == NULL) {
+        return 0;
+    }
+
+    for (int i = 0; i < SDL_arraysize(shader_infos); i++) {
+        if (SDL_strcmp(id, shader_infos[i].id) == 0) {
+            return i;
+        }
+    }
+
+    return 0;
+}
+
+bool VitaRenderer_SetFilter(int index) {
+    if (index < 0 || index >= SDL_arraysize(shader_infos)) {
+        index = 0;
+    }
+
+    if (index == shader_index && (index == 0 || shader_loaded)) {
+        return true;
+    }
+
+    if (shader_loaded) {
+        // The GPU may still be drawing the last frame with it
+        vita2d_wait_rendering_done();
+        VitaShader_Free(&shader);
+        shader_loaded = false;
+    }
+
+    shader_index = index;
+
+    if (index == 0) {
+        return true;
+    }
+
+    if (canvas == NULL) {
+        return false;
+    }
+
+    if (shader_infos[index].kind == FILTER_CRT) {
+        return VitaCrt_Init();
+    }
+
+    if (!VitaShader_Load(&shader, shader_infos[index].id)) {
+        return false;
+    }
+
+    const SceGxmTextureFilter sampling =
+        shader_infos[index].linear ? SCE_GXM_TEXTURE_FILTER_LINEAR : SCE_GXM_TEXTURE_FILTER_POINT;
+    shader_texture = canvas->gxm_tex;
+    sceGxmTextureSetMinFilter(&shader_texture, sampling);
+    sceGxmTextureSetMagFilter(&shader_texture, sampling);
+    shader_loaded = true;
+    return true;
+}
+
+int VitaRenderer_GetFilter() {
+    return shader_index;
+}
+
+void VitaRenderer_SetFilterIntensity(int percent) {
+    shader_intensity = SDL_clamp(percent, 0, 100);
+}
+
+int VitaRenderer_GetFilterIntensity() {
+    return shader_intensity;
 }
 
 void VitaRenderer_SetAspect(VitaAspect aspect) {

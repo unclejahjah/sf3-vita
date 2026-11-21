@@ -14,6 +14,8 @@
 #if CRS_APP_DRIVER_VITA
 #define CFG_KEY_VITA_ASPECT "vita-aspect"
 #define CFG_KEY_VITA_FILTER "vita-filter"
+#define CFG_KEY_VITA_SHADER "vita-shader"
+#define CFG_KEY_VITA_SHADER_INTENSITY "vita-shader-intensity"
 #define CFG_KEY_VITA_PERF_LOG "vita-perf-log"
 #endif
 
@@ -37,6 +39,9 @@ const char* Config_GetString(const char* key);
 
 /// Set the string value associated with the given key. The change is kept in memory until `Config_Save` is called
 void Config_SetString(const char* key, const char* value);
+
+/// Set the integer value associated with the given key. The change is kept in memory until `Config_Save` is called
+void Config_SetInt(const char* key, int value);
 
 /// Write the config file with the current values
 void Config_Save();

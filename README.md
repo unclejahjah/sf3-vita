@@ -105,7 +105,7 @@ Everything the game writes goes to `ux0:data/3sx/`:
 | `log.txt` | A log of the last start; attach it to bug reports |
 | `perf.txt` | Frames that took too long, for speed reports (turn off with `vita-perf-log = false`) |
 
-The Vita settings (`vita-aspect`, `vita-filter`, `vita-perf-log`) and the Screen Adjust page are explained in
+The Vita settings (`vita-aspect`, `vita-filter`, `vita-shader`, `vita-shader-intensity`, `vita-perf-log`) and the Screen Adjust page are explained in
 [docs/vita.md](docs/vita.md). The general options are in [docs/config.md](docs/config.md).
 
 ## Troubleshooting
@@ -151,6 +151,9 @@ again.
 - [SDL3](https://github.com/libsdl-org/SDL) and its PS Vita backend – sound, timing and files
 - [HENkaku and Ensō](https://henkaku.xyz) by Team Molecule – homebrew on the Vita
 - [VitaShell](https://github.com/TheOfficialFloW/VitaShell) by TheFloW – installing and copying files
+- [Emu4VitaPlus](https://github.com/noword/Emu4VitaPlus) by noword – the picture filters, adapted from RetroArch
+  shaders by Themaister, rsn8887, Gigaherz and Greg Hogan; the CRT looks follow Timothy
+  Lottes' public-domain masks ([list and licences](tools/vita/shaders/README.md))
 
 **Libraries used by 3SX:**
 - [GekkoNet](https://github.com/HeatXD/GekkoNet) for rollback netcode (desktop only)

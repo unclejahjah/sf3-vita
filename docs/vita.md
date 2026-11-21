@@ -39,8 +39,23 @@ A controller can be paired while the game is running.
 
 The game's own Screen Adjust page (Option menu) works on the Vita: the position and size settings move and shrink
 the picture. The page has one more row on the Vita, SCREEN SHAPE, which switches the picture between NORMAL (4:3),
-WIDE and FULL (the whole screen). The choice is saved as `vita-aspect` in the config file. To make room for
-the extra row, the page is written in the game's small menu font.
+WIDE and FULL (the whole screen). The choice is saved as `vita-aspect` in the config file.
+
+Two more rows pick a picture filter:
+
+- FILTER: OFF, one of the post-processing filters of [Emu4VitaPlus](https://github.com/noword/Emu4VitaPlus)
+  (sharp bilinear, LCD grids, zfast CRT), or one of six light CRT looks
+  made for this port: CRT SCANLINES, CRT SCAN SOFT, CRT SCAN HARD, CRT APERTURE (aperture grille), CRT SHADOW MASK and CRT SLOT MASK.
+  Saved as `vita-shader`.
+- INTENSITY: how strongly the filter shows, from 0% to 100% in steps of 10. Below 100% the filtered picture is
+  mixed with the plain one. Saved as `vita-shader-intensity`.
+
+Emu4VitaPlus's heavy CRT shaders (crt-lottes, crt-easymode, crt-gdv-mini) and Scale2x+ dropped frames on the
+Vita and were taken out. The six CRT looks replace them: the scanline and mask pattern is worked out once when a
+setting changes and then multiplied onto the picture, which costs about one extra draw of the picture.
+[tools/vita/shaders/README.md](../tools/vita/shaders/README.md) has the source and the license of every filter.
+
+To make room for the extra rows, the page is written in the game's small menu font.
 
 ## Settings
 
@@ -59,6 +74,17 @@ How the 384x224 picture is fitted to the 960x544 screen. It can also be changed 
 
 - `sharp` (default): the game is drawn at twice its resolution and then scaled smoothly. Crisp pixels without shimmer.
 - `nearest`: the game is drawn straight to the screen without smoothing. A little cheaper for the GPU.
+
+### `vita-shader`
+
+The picture filter, also chosen on the Screen Adjust page: `off` (default) or the file name of a filter in
+`tools/vita/shaders/gxp/` without `_v.gxp` / `_f.gxp` (for example `sharp-bilinear-simple`), or one of the CRT
+looks `crt-scanlines`, `crt-scan-soft`, `crt-scan-hard`, `crt-aperture`, `crt-shadow-mask` and `crt-slot-mask`.
+Filters work with both `vita-filter` settings.
+
+### `vita-shader-intensity`
+
+How strongly the filter shows, `0` to `100` (default `100`).
 
 ### `vita-perf-log`
 

@@ -1936,18 +1936,20 @@ void Return_Option_Mode_Sub(struct _TASK* task_ptr) {
     Cursor_Y_Pos[1][2] = Menu_Cursor_Y[1];
 }
 
-/// The Vita's Screen Adjust page has one more row, which chooses how the picture is fitted to the screen.
-/// All rows are then written in the small font so that eight of them fit
+/// The Vita's Screen Adjust page has three more rows: how the picture is fitted to the screen, the filter and the
+/// filter intensity. All rows are then written in the small font so that ten of them fit
 #if !defined(SCREEN_ADJUST_HAS_SHAPE)
 #define SCREEN_ADJUST_HAS_SHAPE CRS_APP_DRIVER_VITA
 #endif
 
 #if SCREEN_ADJUST_HAS_SHAPE
 #define SCREEN_ADJUST_ROW_SHAPE 4
-#define SCREEN_ADJUST_ROW_LANGUAGE 5
-#define SCREEN_ADJUST_ROW_DEFAULT 6
-#define SCREEN_ADJUST_ROW_EXIT 7
-#define SCREEN_ADJUST_LANGUAGE_SLOT 5
+#define SCREEN_ADJUST_ROW_FILTER 5
+#define SCREEN_ADJUST_ROW_INTENSITY 6
+#define SCREEN_ADJUST_ROW_LANGUAGE 7
+#define SCREEN_ADJUST_ROW_DEFAULT 8
+#define SCREEN_ADJUST_ROW_EXIT 9
+#define SCREEN_ADJUST_LANGUAGE_SLOT 7
 #else
 #define SCREEN_ADJUST_ROW_LANGUAGE 4
 #define SCREEN_ADJUST_ROW_DEFAULT 5
@@ -1993,18 +1995,20 @@ void Screen_Adjust(struct _TASK* task_ptr) {
 #if SCREEN_ADJUST_HAS_SHAPE
         Convert_Buff[2][0][SCREEN_ADJUST_LANGUAGE_SLOT] = mpp_w.language;
         Convert_Buff[2][0][SCREEN_ADJUST_SHAPE_SLOT] = VitaApp_GetPictureShape();
+        Convert_Buff[2][0][SCREEN_ADJUST_FILTER_SLOT] = VitaApp_GetFilter();
+        Convert_Buff[2][0][SCREEN_ADJUST_INTENSITY_SLOT] = VitaApp_GetFilterIntensity();
 
-        for (ix = 0; ix <= SCREEN_ADJUST_ROW_SHAPE; ix++) {
+        for (ix = 0; ix <= SCREEN_ADJUST_ROW_INTENSITY; ix++) {
             effect_63_init_compact(ix + 0x66, 0, 2, ix, ix);
             Order[ix + 0x66] = 1;
             Order_Dir[ix + 0x66] = 4;
             Order_Timer[ix + 0x66] = ix + 0x14;
         }
 
-        effect_64_init(0x6B, 0, 2, 9, SCREEN_ADJUST_ROW_LANGUAGE, 0x70A7, 19, 2, 0);
-        Order[0x6B] = 1;
-        Order_Dir[0x6B] = 4;
-        Order_Timer[0x6B] = 0x19;
+        effect_64_init(0x6D, 0, 2, 9, SCREEN_ADJUST_ROW_LANGUAGE, 0x70A7, 19, 2, 0);
+        Order[0x6D] = 1;
+        Order_Dir[0x6D] = 4;
+        Order_Timer[0x6D] = SCREEN_ADJUST_ROW_LANGUAGE + 0x14;
 
         for (ix = 0, unused_s3 = char_index = 67; ix <= SCREEN_ADJUST_ROW_EXIT; ix++, unused_s2 = char_index++) {
             effect_61_init(0, ix + 0x50, 0, 2, char_index, ix, 0x70A7);
@@ -2077,6 +2081,8 @@ void Screen_Adjust_Sub(s16 PL_id) {
 #if SCREEN_ADJUST_HAS_SHAPE
     Convert_Buff[2][0][SCREEN_ADJUST_LANGUAGE_SLOT] = mpp_w.language;
     Convert_Buff[2][0][SCREEN_ADJUST_SHAPE_SLOT] = VitaApp_GetPictureShape();
+    Convert_Buff[2][0][SCREEN_ADJUST_FILTER_SLOT] = VitaApp_GetFilter();
+    Convert_Buff[2][0][SCREEN_ADJUST_INTENSITY_SLOT] = VitaApp_GetFilterIntensity();
 #endif
 }
 
@@ -2121,6 +2127,8 @@ void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
         mpp_w.language = Get_Default_Language();
 #if SCREEN_ADJUST_HAS_SHAPE
         VitaApp_SetPictureShape(0);
+        VitaApp_SetFilter(0);
+        VitaApp_SetFilterIntensity(100 / VITA_FILTER_INTENSITY_STEP);
 #endif
     }
 }
@@ -2179,6 +2187,19 @@ void Screen_Move_Sub_LR(u16 sw) {
             VitaApp_SetPictureShape(VitaApp_GetPictureShape() - 1);
             flag = 1;
             break;
+
+        case SCREEN_ADJUST_ROW_FILTER:
+            VitaApp_SetFilter(VitaApp_GetFilter() - 1);
+            flag = 1;
+            break;
+
+        case SCREEN_ADJUST_ROW_INTENSITY:
+            if (VitaApp_GetFilterIntensity() > 0) {
+                VitaApp_SetFilterIntensity(VitaApp_GetFilterIntensity() - 1);
+                flag = 1;
+            }
+
+            break;
 #endif
 
         case SCREEN_ADJUST_ROW_LANGUAGE:
@@ -2236,6 +2257,19 @@ void Screen_Move_Sub_LR(u16 sw) {
         case SCREEN_ADJUST_ROW_SHAPE:
             VitaApp_SetPictureShape(VitaApp_GetPictureShape() + 1);
             flag = 1;
+            break;
+
+        case SCREEN_ADJUST_ROW_FILTER:
+            VitaApp_SetFilter(VitaApp_GetFilter() + 1);
+            flag = 1;
+            break;
+
+        case SCREEN_ADJUST_ROW_INTENSITY:
+            if (VitaApp_GetFilterIntensity() < 100 / VITA_FILTER_INTENSITY_STEP) {
+                VitaApp_SetFilterIntensity(VitaApp_GetFilterIntensity() + 1);
+                flag = 1;
+            }
+
             break;
 #endif
 
