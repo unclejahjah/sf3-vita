@@ -38,6 +38,8 @@ static const ConfigEntry default_entries[] = {
 #if CRS_APP_DRIVER_VITA
     { .key = CFG_KEY_VITA_ASPECT, .type = CFG_STRING, .value.s = "4:3" },
     { .key = CFG_KEY_VITA_FILTER, .type = CFG_STRING, .value.s = "sharp" },
+    { .key = CFG_KEY_VITA_SHADER, .type = CFG_STRING, .value.s = "off" },
+    { .key = CFG_KEY_VITA_SHADER_INTENSITY, .type = CFG_INT, .value.i = 100 },
     { .key = CFG_KEY_VITA_PERF_LOG, .type = CFG_BOOL, .value.b = true },
 #endif
 };
@@ -209,6 +211,34 @@ void Config_SetString(const char* key, const char* value) {
     entry->key = SDL_strdup(key);
     entry->type = CFG_STRING;
     entry->value.s = SDL_strdup(value);
+    entry_count += 1;
+}
+
+void Config_SetInt(const char* key, int value) {
+    for (int i = 0; i < entry_count; i++) {
+        ConfigEntry* entry = &entries[i];
+
+        if (SDL_strcmp(entry->key, key) != 0) {
+            continue;
+        }
+
+        if (entry->type == CFG_STRING) {
+            SDL_free(entry->value.s);
+        }
+
+        entry->type = CFG_INT;
+        entry->value.i = value;
+        return;
+    }
+
+    if (entry_count == CONFIG_ENTRIES_MAX) {
+        return;
+    }
+
+    ConfigEntry* entry = &entries[entry_count];
+    entry->key = SDL_strdup(key);
+    entry->type = CFG_INT;
+    entry->value.i = value;
     entry_count += 1;
 }
 

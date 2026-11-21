@@ -116,3 +116,26 @@ License: MIT license, as provided by the vita2d project.
 
 Copyright:
 - Copyright (C) xerpi and vita2d contributors.
+
+libvita2d_ext (PS Vita build only)
+----------------------------------
+Upstream: https://github.com/frangarcj/libvita2d_ext (as used by Emu4VitaPlus)
+
+The shader loader in src/platform/video/vita/vita_shader.c follows vita2d_create_shader from libvita2d_ext.
+
+License: MIT license.
+
+Copyright:
+- Copyright (c) 2017 Francisco Garcia (frangarcj).
+
+Emu4VitaPlus picture filters (PS Vita build only)
+-------------------------------------------------
+Upstream: https://github.com/noword/Emu4VitaPlus
+
+The .vpk contains the compiled filter programs from Emu4VitaPlus in shaders/. They are separate files loaded at
+runtime. Their source, authors and licenses are listed in tools/vita/shaders/README.md (also in the .vpk as
+licenses/shaders/README.md).
+
+License: Emu4VitaPlus is licensed under the GNU General Public License, version 2 (licenses/shaders/LICENSE-GPL-2.0.txt).
+The individual filters are public domain or GNU GPL (v2 or later) by their authors:
+Themaister, rsn8887, Gigaherz, Greg Hogan (SoltanGris42) and noword.

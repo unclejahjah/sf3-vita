@@ -133,6 +133,14 @@ static VitaFilter read_filter() {
     return VITA_FILTER_SHARP;
 }
 
+static void apply_filter(int index) {
+    if (!VitaRenderer_SetFilter(index)) {
+        SDL_Log("Couldn't load the %s filter, the picture stays unfiltered", VitaRenderer_GetFilterId(index));
+    }
+
+    VitaPerf_Note("filter %s at %d%%", VitaRenderer_GetFilterId(index), VitaRenderer_GetFilterIntensity());
+}
+
 static bool poll_sdl_events() {
     SDL_Event event;
     bool continue_running = true;
@@ -184,6 +192,8 @@ static bool init() {
         return false;
     }
 
+    VitaRenderer_SetFilterIntensity(Config_GetInt(CFG_KEY_VITA_SHADER_INTENSITY));
+    apply_filter(VitaRenderer_FindFilter(Config_GetString(CFG_KEY_VITA_SHADER)));
     VitaPad_Init();
 
     if (!Resources_Check()) {
@@ -220,6 +230,11 @@ static bool init() {
         SDL_asprintf(&perf_path, "%s%s", Paths_GetPrefPath(), PERF_FILE_NAME);
         VitaPerf_Init(perf_path);
         SDL_free(perf_path);
+        VitaPerf_Note(
+            "filter %s at %d%%",
+            VitaRenderer_GetFilterId(VitaRenderer_GetFilter()),
+            VitaRenderer_GetFilterIntensity()
+        );
     }
 
     return true;
@@ -248,6 +263,41 @@ void VitaApp_SetPictureShape(int shape) {
 
     VitaRenderer_SetAspect(aspect_choices[choice].aspect);
     Config_SetString(CFG_KEY_VITA_ASPECT, aspect_choices[choice].config_value);
+    Config_Save();
+}
+
+int VitaApp_GetFilter() {
+    return VitaRenderer_GetFilter();
+}
+
+void VitaApp_SetFilter(int filter) {
+    const int count = VitaRenderer_GetFilterCount();
+    const int choice = ((filter % count) + count) % count;
+
+    if (choice == VitaApp_GetFilter()) {
+        return;
+    }
+
+    apply_filter(choice);
+    Config_SetString(CFG_KEY_VITA_SHADER, VitaRenderer_GetFilterId(choice));
+    Config_Save();
+}
+
+int VitaApp_GetFilterIntensity() {
+    return VitaRenderer_GetFilterIntensity() / VITA_FILTER_INTENSITY_STEP;
+}
+
+void VitaApp_SetFilterIntensity(int step) {
+    const int max_step = 100 / VITA_FILTER_INTENSITY_STEP;
+    const int percent = SDL_clamp(step, 0, max_step) * VITA_FILTER_INTENSITY_STEP;
+
+    if (percent == VitaRenderer_GetFilterIntensity()) {
+        return;
+    }
+
+    VitaRenderer_SetFilterIntensity(percent);
+    VitaPerf_Note("filter %s at %d%%", VitaRenderer_GetFilterId(VitaRenderer_GetFilter()), percent);
+    Config_SetInt(CFG_KEY_VITA_SHADER_INTENSITY, percent);
     Config_Save();
 }
 

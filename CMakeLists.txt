@@ -444,6 +444,14 @@ elseif(VITA)
     endif()
     set(VITA_MKSFOEX_FLAGS "-d PARENTAL_LEVEL=1")
 
+    # Picture filters from Emu4VitaPlus (tools/vita/shaders/README.md), loaded from app0:shaders/ at runtime
+    set(VITA_SHADER_FILES)
+    file(GLOB VITA_SHADER_GXP CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tools/vita/shaders/gxp/*.gxp")
+    foreach(gxp ${VITA_SHADER_GXP})
+        get_filename_component(gxp_name "${gxp}" NAME)
+        list(APPEND VITA_SHADER_FILES FILE "${gxp}" "shaders/${gxp_name}")
+    endforeach()
+
     vita_create_self(3sx.self 3sx)
     vita_create_vpk(3sx.vpk ${VITA_TITLE_ID} 3sx.self
         VERSION ${VITA_VERSION}
@@ -457,6 +465,9 @@ elseif(VITA)
         ${VITA_SCE_SYS_EXTRA}
         FILE ${CMAKE_SOURCE_DIR}/LICENSE licenses/LICENSE
         FILE ${CMAKE_SOURCE_DIR}/THIRD_PARTY_NOTICES.txt licenses/THIRD_PARTY_NOTICES.txt
+        FILE ${CMAKE_SOURCE_DIR}/tools/vita/shaders/README.md licenses/shaders/README.md
+        FILE ${CMAKE_SOURCE_DIR}/tools/vita/shaders/LICENSE-GPL-2.0.txt licenses/shaders/LICENSE-GPL-2.0.txt
+        ${VITA_SHADER_FILES}
     )
 else()
     set(CPACK_PACKAGE_NAME "3SX")
