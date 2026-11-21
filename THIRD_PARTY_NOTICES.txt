@@ -138,4 +138,4 @@ licenses/shaders/README.md).
 
 License: Emu4VitaPlus is licensed under the GNU General Public License, version 2 (licenses/shaders/LICENSE-GPL-2.0.txt).
 The individual filters are public domain or GNU GPL (v2 or later) by their authors:
-Themaister, rsn8887, guest(r), Gigaherz, Greg Hogan (SoltanGris42), hunterk and noword.
+Themaister, rsn8887, Gigaherz, Greg Hogan (SoltanGris42) and noword.

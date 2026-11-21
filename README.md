@@ -152,7 +152,7 @@ again.
 - [HENkaku and Ensō](https://henkaku.xyz) by Team Molecule – homebrew on the Vita
 - [VitaShell](https://github.com/TheOfficialFloW/VitaShell) by TheFloW – installing and copying files
 - [Emu4VitaPlus](https://github.com/noword/Emu4VitaPlus) by noword – the picture filters, adapted from RetroArch
-  shaders by Themaister, rsn8887, guest(r), Gigaherz, Greg Hogan and hunterk; the CRT looks follow Timothy
+  shaders by Themaister, rsn8887, Gigaherz and Greg Hogan; the CRT looks follow Timothy
   Lottes' public-domain masks ([list and licences](tools/vita/shaders/README.md))
 
 **Libraries used by 3SX:**

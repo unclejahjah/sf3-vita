@@ -44,7 +44,7 @@ WIDE and FULL (the whole screen). The choice is saved as `vita-aspect` in the co
 Two more rows pick a picture filter:
 
 - FILTER: OFF, one of the post-processing filters of [Emu4VitaPlus](https://github.com/noword/Emu4VitaPlus)
-  (sharp bilinear, anti-aliasing, LCD grids, zfast CRT, handheld colour palettes), or one of six light CRT looks
+  (sharp bilinear, LCD grids, zfast CRT), or one of six light CRT looks
   made for this port: CRT SCANLINES, CRT SCAN SOFT, CRT SCAN HARD, CRT APERTURE (aperture grille), CRT SHADOW MASK and CRT SLOT MASK.
   Saved as `vita-shader`.
 - INTENSITY: how strongly the filter shows, from 0% to 100% in steps of 10. Below 100% the filtered picture is

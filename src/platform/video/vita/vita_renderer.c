@@ -140,12 +140,12 @@ typedef struct VitaShaderInfo {
 
 /// The filters, in the order of the FILTER row of the Screen Adjust page (`Letter_Data_63` in eff63.c holds the
 /// names shown there). Emu4VitaPlus's scale2xplus, crt-gdv-mini, crt-easymode, crt-lottes-fast and crt-lottes
-/// dropped frames on hardware, so the CRT looks come from vita_crt.c instead
+/// dropped frames on hardware, so the CRT looks come from vita_crt.c instead. Its advanced-aa and handheld colour
+/// filters were left out by choice
 static const VitaShaderInfo shader_infos[] = {
     { "off", FILTER_OFF },
     { "sharp-bilinear", FILTER_SHADER, true },
     { "sharp-bilinear-simple", FILTER_SHADER, true },
-    { "advanced-aa", FILTER_SHADER, false },
     { "lcd3x", FILTER_SHADER, false },
     { "zfast_lcd", FILTER_SHADER, true },
     { "zfast_crt", FILTER_SHADER, true },
@@ -155,12 +155,6 @@ static const VitaShaderInfo shader_infos[] = {
     { "crt-aperture", FILTER_CRT, false, VITA_CRT_APERTURE },
     { "crt-shadow-mask", FILTER_CRT, false, VITA_CRT_SHADOW_MASK },
     { "crt-slot-mask", FILTER_CRT, false, VITA_CRT_SLOT_MASK },
-    { "gba-color", FILTER_SHADER, false },
-    { "gbc-color", FILTER_SHADER, false },
-    { "gba-color+lcd3x", FILTER_SHADER, false },
-    { "gb-palette-dmg", FILTER_SHADER, false },
-    { "gb-palette-pocket", FILTER_SHADER, false },
-    { "gb-palette-light", FILTER_SHADER, false },
 };
 
 static int shader_index = 0;
