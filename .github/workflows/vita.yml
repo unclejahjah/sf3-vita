@@ -82,7 +82,14 @@ jobs:
                 TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && format('vita-v{0}', inputs.version) || github.ref_name }}
             run: |
                 version="${TAG_NAME#vita-v}"
-                cat > notes.md <<EOF
+                # The changelog section for this version (the lines under "## <version>" in CHANGELOG.md)
+                awk -v v="## ${version}" '$0 == v { found = 1; next } /^## / { found = 0 } found' CHANGELOG.md > changes.md
+                {
+                    echo "## What's new"
+                    if [ -s changes.md ]; then cat changes.md; else echo "See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG_NAME}/CHANGELOG.md)."; fi
+                    echo
+                } > notes.md
+                cat >> notes.md <<EOF
                 Street Fighter III: 3rd Strike running natively on the PS Vita and PS TV, built on
                 [3SX](https://github.com/crowded-street/3sx) by the crowded-street team.
 
